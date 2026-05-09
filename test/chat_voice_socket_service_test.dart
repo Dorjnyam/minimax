@@ -43,6 +43,7 @@ void main() {
       'audio': base64Encode([1, 2, 3]),
       'mime': 'audio/m4a',
       'language': 'mn',
+      'tts': false,
     });
   });
 
@@ -64,6 +65,7 @@ void main() {
         expect(payload['type'], 'user_audio');
         expect(payload['mime'], 'audio/m4a');
         expect(payload['language'], 'mn');
+        expect(payload['tts'], false);
         return jsonEncode({
           'data': {'content': 'reply', 'audio_url': '/reply.mp3'},
         });
@@ -82,6 +84,35 @@ void main() {
     expect(response.text, 'reply');
     expect(response.audioUrl, '/reply.mp3');
   });
+  test('isVoiceResponseComplete skips text until audio', () {
+    expect(
+      ChatVoiceSocketService.isVoiceResponseComplete({'content': 'typing...'}),
+      isFalse,
+    );
+    expect(
+      ChatVoiceSocketService.isVoiceResponseComplete({
+        'type': 'assistant_message',
+        'text': 'partial',
+      }),
+      isFalse,
+    );
+    expect(
+      ChatVoiceSocketService.isVoiceResponseComplete({'audio_url': '/reply.mp3'}),
+      isTrue,
+    );
+    expect(
+      ChatVoiceSocketService.isVoiceResponseComplete({
+        'audio_base64': 'AAAA',
+        'mime': 'audio/mpeg',
+      }),
+      isTrue,
+    );
+    expect(
+      ChatVoiceSocketService.isVoiceResponseComplete({'error': 'STT failed'}),
+      isTrue,
+    );
+  });
+
   test('sendAudio parses inline base64 audio response', () async {
     final file = File('${Directory.systemTemp.path}/baigalaa_socket_b64.m4a');
     await file.writeAsBytes([7, 8, 9]);

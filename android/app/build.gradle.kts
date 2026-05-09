@@ -43,11 +43,6 @@ flutter {
     source = "../.."
 }
 
-val mirrorFlutterApks by tasks.registering(Copy::class) {
-    from(layout.buildDirectory.dir("outputs/flutter-apk"))
-    into(rootProject.layout.projectDirectory.dir("../build/app/outputs/flutter-apk"))
-}
-
-tasks.matching { it.name.startsWith("assemble") }.configureEach {
-    finalizedBy(mirrorFlutterApks)
+dependencies {
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }

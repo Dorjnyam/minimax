@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../shared/services/maps_launcher_service.dart';
+import '../../../shared/services/user_location_service.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/auth_storage.dart';
 import '../../auth/data/session_refresh_service.dart';
@@ -39,6 +40,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     ChatRepository? chatRepository,
     ChatVoiceSocketService? chatVoiceSocket,
     ChatAudioPlaybackService? chatAudioPlayback,
+    UserLocationService? userLocationService,
     AssistantChatService? chatService,
   }) : _repository = repository,
        _mapsLauncher = mapsLauncher,
@@ -58,6 +60,8 @@ class AssistantCubit extends Cubit<AssistantState> {
              chatRepository: chatRepository ?? const ChatRepository(),
              voiceSocket: chatVoiceSocket ?? const ChatVoiceSocketService(),
              audioPlayback: chatAudioPlayback ?? ChatAudioPlaybackService(),
+             locationService:
+                 userLocationService ?? UserLocationService(),
            ),
        super(const AssistantState());
 

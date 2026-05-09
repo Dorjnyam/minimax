@@ -5,14 +5,15 @@ allprojects {
     }
 }
 
-val localBuildRoot =
-    System.getenv("LOCALAPPDATA") ?: System.getProperty("java.io.tmpdir")
-val newBuildDir = file("$localBuildRoot/minimax_flutter_build/android")
-rootProject.layout.buildDirectory.set(newBuildDir)
+val newBuildDir: Directory =
+    rootProject.layout.buildDirectory
+        .dir("../../build")
+        .get()
+rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir = newBuildDir.resolve(project.name)
-    project.layout.buildDirectory.set(newSubprojectBuildDir)
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
     project.evaluationDependsOn(":app")
