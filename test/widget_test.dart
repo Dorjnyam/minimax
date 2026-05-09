@@ -20,21 +20,12 @@ import 'package:minimax/shared/constants/baigalaa_constants.dart';
 Future<void> _noopLogout() async {}
 
 void main() {
-  testWidgets('First launch opens login screen immediately', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      BaigalaaApp(
-        authStorage: MemoryAuthStorage(),
-      ),
-    );
+  testWidgets('First launch opens login screen immediately', (tester) async {
+    await tester.pumpWidget(BaigalaaApp(authStorage: MemoryAuthStorage()));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(
-      find.text('Тавтай морилно уу', skipOffstage: false),
-      findsOneWidget,
-    );
+    expect(find.text('Тавтай морилно уу', skipOffstage: false), findsOneWidget);
     expect(
       find.text('Бүртгэл байхгүй юу? Бүртгүүлэх', skipOffstage: false),
       findsOneWidget,
@@ -58,7 +49,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('SAY SOMETHING'), findsOneWidget);
     expect(find.text('Turn off the light'), findsOneWidget);
     expect(find.byType(PageView), findsOneWidget);
 

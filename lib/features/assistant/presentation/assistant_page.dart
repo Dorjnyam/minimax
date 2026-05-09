@@ -45,37 +45,19 @@ class AssistantPage extends StatelessWidget {
                   children: [
                     _AssistantStatusBar(onLogout: onLogout),
                     const SizedBox(height: 12),
-                    AssistantChips(
-                      onSelected: (suggestion) => unawaited(
-                        context.read<AssistantCubit>().runSuggestion(
-                          suggestion,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'Hi, Baigalaa',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.68),
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      state.isListening ? 'RECORDING' : 'SAY SOMETHING',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0,
-                      ),
-                    ),
                     const Spacer(),
                     Center(
                       child: AssistantOrb(
                         active: state.isListening,
                         size: _orbSize(context),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    AssistantChips(
+                      onSelected: (suggestion) => unawaited(
+                        context.read<AssistantCubit>().runSuggestion(
+                          suggestion,
+                        ),
                       ),
                     ),
                     const Spacer(),
