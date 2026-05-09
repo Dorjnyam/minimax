@@ -53,7 +53,12 @@ class _AuthPageState extends State<AuthPage> {
       builder: (context, state) {
         final cubit = context.read<AuthCubit>();
         final isProfile = state.view == AuthView.profile;
-        final listPad = EdgeInsets.fromLTRB(20, 0, 20, isProfile ? 32 : 40);
+        final listPad = EdgeInsets.fromLTRB(
+          20,
+          isProfile ? 0 : 16,
+          20,
+          isProfile ? 32 : 40,
+        );
         return Scaffold(
           body: DecoratedBox(
             decoration: BoxDecoration(gradient: AuthTheme.backgroundGradient),
@@ -189,7 +194,7 @@ class _AuthHero extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AuthTheme.onSurface,
-            fontSize: state.view == AuthView.signUp ? 20 : 28,
+            fontSize: state.view == AuthView.signUp ? 20 : 20,
             height: 1.05,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.2,
