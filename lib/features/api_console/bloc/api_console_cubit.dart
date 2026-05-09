@@ -14,7 +14,9 @@ class ApiConsoleCubit extends Cubit<ApiConsoleState> {
     FlutterSecureStorage storage = const FlutterSecureStorage(),
   }) : _repository = repository,
        _storage = storage,
-       super(const ApiConsoleState());
+       super(const ApiConsoleState()) {
+    emit(state.copyWith(baseUrl: defaultApiBaseUrl));
+  }
 
   final HackathonApiRepository _repository;
   final FlutterSecureStorage _storage;

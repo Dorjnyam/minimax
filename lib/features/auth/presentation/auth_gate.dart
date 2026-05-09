@@ -17,11 +17,9 @@ class AuthGate extends StatelessWidget {
   const AuthGate({
     super.key,
     this.storage = const SecureAuthStorage(),
-    this.splashDuration = const Duration(milliseconds: 900),
   });
 
   final AuthStorage storage;
-  final Duration splashDuration;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +30,6 @@ class AuthGate extends StatelessWidget {
           create: (_) => AuthGateCubit(
             repository: repository,
             storage: storage,
-            splashDuration: splashDuration,
           )..start(),
         ),
         BlocProvider(

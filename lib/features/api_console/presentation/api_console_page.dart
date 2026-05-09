@@ -118,7 +118,7 @@ class _ApiConsolePageState extends State<ApiConsolePage> {
     return ApiSection(
       title: 'Connection',
       children: [
-        const SelectableText(defaultApiBaseUrl),
+        SelectableText(defaultApiBaseUrl),
         Text(
           'Backend URL is configured in baigalaa_constants.dart.',
           style: TextStyle(color: Colors.black.withValues(alpha: 0.55)),

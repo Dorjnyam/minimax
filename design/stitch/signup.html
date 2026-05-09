@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html class="light" lang="mn">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Baigalaa — Бүртгэл үүсгэх</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-background": "#1d1b20",
+            "on-surface-variant": "#494551",
+            "on-surface": "#1d1b20",
+            "primary": "#4f378a",
+            "on-primary": "#ffffff",
+            "primary-container": "#6750a4",
+            "primary-fixed-variant": "#4f378a",
+            "surface": "#fdf7ff",
+            "background": "#fdf7ff",
+            "surface-variant": "#e6e0e9",
+            "surface-container-lowest": "#ffffff",
+            "surface-container": "#f2ecf4",
+            "surface-container-low": "#f8f2fa",
+            "outline-variant": "#cbc4d2",
+            "on-secondary-container": "#645a7d",
+            "tertiary": "#765b00",
+          },
+          borderRadius: { xl: "0.75rem", xxl: "20px", full: "9999px" },
+          spacing: {
+            "margin-mobile": "20px",
+            "gutter-mobile": "16px",
+            xl: "32px",
+            xxl: "48px",
+            xs: "4px",
+            sm: "8px",
+            md: "16px",
+            lg: "24px",
+            base: "8px",
+          },
+          fontSize: {
+            "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "body-md": ["16px", { lineHeight: "24px", letterSpacing: "0", fontWeight: "500" }],
+            "headline-lg": ["32px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "700" }],
+            "headline-md": ["24px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }],
+            "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    }
+    .voice-orb {
+      background: radial-gradient(circle at 30% 30%, #cfbcff 0%, #6750a4 100%);
+      box-shadow: 0 0 40px rgba(103, 80, 164, 0.4);
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="flex min-h-screen flex-col bg-background text-body-md text-on-background">
+  <header class="fixed top-0 z-50 flex w-full items-center justify-between bg-surface/80 px-[20px] py-md backdrop-blur-md">
+    <div class="flex items-center gap-base">
+      <button type="button" class="flex items-center justify-center rounded-full p-sm transition-colors hover:bg-surface-variant/50 active:scale-[0.98]" aria-label="Буцах">
+        <span class="material-symbols-outlined text-primary">arrow_back</span>
+      </button>
+      <h1 class="text-headline-md font-bold text-primary">Baigalaa</h1>
+    </div>
+    <button type="button" class="flex items-center justify-center rounded-full p-sm transition-colors hover:bg-surface-variant/50 active:scale-[0.98]" aria-label="Тохиргоо">
+      <span class="material-symbols-outlined text-primary">settings</span>
+    </button>
+  </header>
+
+  <main class="flex flex-grow flex-col items-center px-[20px] pb-24 pt-xxl">
+    <section class="mb-xxl mt-xl flex w-full flex-col items-center">
+      <div class="voice-orb relative mb-lg h-32 w-32 rounded-full">
+        <div class="absolute -z-10 scale-125 rounded-full bg-primary/20 animate-pulse" style="inset: -12px"></div>
+      </div>
+      <h2 class="mb-sm text-center text-headline-lg font-bold text-on-background">Бүртгэл үүсгэх</h2>
+      <p class="max-w-[280px] text-center text-body-md text-on-surface-variant">Шинэ бүртгэл үүсгэхэд ердөө хэдхэн секунд шаардлагатай.</p>
+    </section>
+
+    <div class="w-full rounded-xxl border border-surface-variant/30 bg-surface-container-lowest p-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
+      <div class="mb-lg">
+        <p class="flex items-center gap-xs text-label-sm text-primary">
+          <span class="material-symbols-outlined text-[16px]">info</span>
+          Бид таны и-мэйл хаягийг баталгаажуулах болно.
+        </p>
+      </div>
+      <form class="space-y-md">
+        <div class="space-y-xs">
+          <label class="ml-xs text-label-sm text-on-surface-variant" for="su-email">И-МЭЙЛ</label>
+          <input id="su-email" class="h-11 w-full rounded-xl border-none bg-[#F5F3FF] px-md text-on-surface outline-none focus:ring-2 focus:ring-primary/20" placeholder="example@mail.com" type="email" autocomplete="email" />
+        </div>
+        <div class="space-y-xs">
+          <label class="ml-xs text-label-sm text-on-surface-variant" for="su-name">БҮТЭН НЭР</label>
+          <input id="su-name" class="h-11 w-full rounded-xl border-none bg-[#F5F3FF] px-md text-on-surface outline-none focus:ring-2 focus:ring-primary/20" placeholder="Таны нэр" type="text" autocomplete="name" />
+        </div>
+        <div class="space-y-xs">
+          <label class="ml-xs text-label-sm text-on-surface-variant" for="su-phone">УТАСНЫ ДУГААР</label>
+          <input id="su-phone" class="h-11 w-full rounded-xl border-none bg-[#F5F3FF] px-md text-on-surface outline-none focus:ring-2 focus:ring-primary/20" placeholder="+976" type="tel" autocomplete="tel" />
+        </div>
+        <button type="submit" class="mt-lg h-11 w-full rounded-xl bg-primary text-label-md text-on-primary transition-opacity hover:opacity-90 active:scale-[0.98]">Бүртгүүлэх</button>
+      </form>
+    </div>
+
+    <button type="button" class="mt-lg rounded-full px-md py-sm text-label-md text-primary transition-colors hover:bg-primary/5 active:scale-[0.95]">Бүртгэлтэй юу? Нэвтрэх</button>
+
+    <div class="mt-xxl flex w-full items-center justify-between rounded-xl border border-outline-variant/20 bg-surface-container p-md">
+      <div class="flex items-center gap-md">
+        <div class="h-2 w-2 animate-pulse rounded-full bg-tertiary"></div>
+        <span class="text-label-sm text-on-surface-variant">Систем бэлэн байна</span>
+      </div>
+      <span class="material-symbols-outlined text-[20px] text-on-surface-variant">verified_user</span>
+    </div>
+  </main>
+
+  <nav class="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around rounded-t-xl bg-surface-container-low px-gutter-mobile py-sm pb-4 shadow-[0_-4px_12px_rgba(15,23,42,0.06)]">
+    <button type="button" class="p-2 text-on-secondary-container transition-opacity hover:opacity-80 active:scale-[0.98]" aria-label="Тусламж">
+      <span class="material-symbols-outlined">help_outline</span>
+    </button>
+    <button type="button" class="p-2 text-on-secondary-container transition-opacity hover:opacity-80 active:scale-[0.98]" aria-label="Мэдээлэл">
+      <span class="material-symbols-outlined">info</span>
+    </button>
+  </nav>
+</body>
+</html>

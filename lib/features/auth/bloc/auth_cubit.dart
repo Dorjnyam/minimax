@@ -12,7 +12,9 @@ class AuthCubit extends Cubit<AuthState> {
     AuthStorage storage = const SecureAuthStorage(),
   }) : _repository = repository,
        _storage = storage,
-       super(const AuthState());
+       super(const AuthState()) {
+    emit(state.copyWith(baseUrl: defaultApiBaseUrl));
+  }
 
   final AuthRepository _repository;
   final AuthStorage _storage;
@@ -58,7 +60,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String fullName,
     required String phone,
   }) async {
-    await _run('Signing up...', () async {
+    await _run(() async {
       final url = _validBaseUrl(baseUrl);
       await saveBaseUrl(url);
       final user = await _repository.signUp(
@@ -77,7 +79,6 @@ class AuthCubit extends Cubit<AuthState> {
           view: AuthView.login,
           email: email,
           user: user.isEmpty ? state.user : user,
-          message: 'Sign up complete. Send OTP to log in.',
           clearError: true,
         ),
       );
@@ -85,7 +86,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> sendOtp({required String baseUrl, required String email}) async {
-    await _run('Sending OTP...', () async {
+    await _run(() async {
       final url = _validBaseUrl(baseUrl);
       await saveBaseUrl(url);
       await _repository.sendOtp(baseUrl: url, email: email);
@@ -95,7 +96,6 @@ class AuthCubit extends Cubit<AuthState> {
           status: AuthStatus.success,
           view: AuthView.login,
           email: email,
-          message: 'OTP sent.',
           clearError: true,
         ),
       );
@@ -107,7 +107,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String otp,
   }) async {
-    await _run('Verifying OTP...', () async {
+    await _run(() async {
       final url = _validBaseUrl(baseUrl);
       await saveBaseUrl(url);
       final session = await _repository.verifyOtp(
@@ -122,7 +122,6 @@ class AuthCubit extends Cubit<AuthState> {
           status: AuthStatus.success,
           session: session,
           email: email,
-          message: 'Login successful.',
           clearError: true,
         ),
       );
@@ -136,7 +135,6 @@ class AuthCubit extends Cubit<AuthState> {
           status: AuthStatus.success,
           view: AuthView.profile,
           user: user,
-          message: 'Profile loaded.',
           clearError: true,
         ),
       );
@@ -144,7 +142,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> refresh({required String baseUrl}) async {
-    await _run('Refreshing token...', () async {
+    await _run(() async {
       final url = _validBaseUrl(baseUrl);
       await saveBaseUrl(url);
       final session = await _repository.refresh(
@@ -164,7 +162,6 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           status: AuthStatus.success,
           session: merged,
-          message: 'Token refreshed.',
           clearError: true,
         ),
       );
@@ -174,7 +171,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> loadProfile({String? baseUrl, String? accessToken}) async {
     final url = _validBaseUrl(baseUrl ?? state.baseUrl);
     final token = accessToken ?? state.session.accessToken;
-    await _run('Loading profile...', () async {
+    await _run(() async {
       final user = await _repository.me(baseUrl: url, accessToken: token);
       await _saveUser(user);
       emit(
@@ -182,7 +179,6 @@ class AuthCubit extends Cubit<AuthState> {
           status: AuthStatus.success,
           view: AuthView.profile,
           user: user,
-          message: 'Profile loaded.',
           clearError: true,
         ),
       );
@@ -197,17 +193,15 @@ class AuthCubit extends Cubit<AuthState> {
         view: AuthView.login,
         session: AuthSession.empty(),
         user: AuthUser.empty(),
-        message: 'Logged out.',
         clearError: true,
       ),
     );
   }
 
-  Future<void> _run(String message, Future<void> Function() action) async {
+  Future<void> _run(Future<void> Function() action) async {
     emit(
       state.copyWith(
         status: AuthStatus.loading,
-        message: message,
         clearError: true,
       ),
     );
@@ -217,7 +211,6 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           status: AuthStatus.failure,
-          message: 'Request failed.',
           errorMessage: error.toString(),
         ),
       );

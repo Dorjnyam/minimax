@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html class="light" lang="mn">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Baigalaa — Нэвтрэх</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-background": "#1d1b20",
+            "on-surface-variant": "#494551",
+            "on-surface": "#1d1b20",
+            "primary": "#4f378a",
+            "on-primary": "#ffffff",
+            "primary-container": "#6750a4",
+            "surface": "#fdf7ff",
+            "background": "#fdf7ff",
+            "surface-variant": "#e6e0e9",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-high": "#ece6ee",
+            "outline": "#7a7582",
+            "on-primary-container": "#e0d2ff",
+          },
+          borderRadius: {
+            xl: "0.75rem",
+            xxl: "20px",
+            full: "9999px",
+          },
+          spacing: {
+            "margin-mobile": "20px",
+            "gutter-mobile": "16px",
+            xl: "32px",
+            xxl: "48px",
+            xs: "4px",
+            sm: "8px",
+            md: "16px",
+            lg: "24px",
+          },
+          fontSize: {
+            "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "body-md": ["16px", { lineHeight: "24px", letterSpacing: "0", fontWeight: "500" }],
+            "body-lg": ["18px", { lineHeight: "28px", letterSpacing: "0", fontWeight: "500" }],
+            "headline-lg": ["32px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "700" }],
+            "headline-md": ["24px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }],
+            "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    }
+    .voice-orb {
+      background: radial-gradient(circle at center, #6750a4 0%, transparent 70%);
+      filter: blur(20px);
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen text-body-md selection:bg-primary-container selection:text-on-primary-container">
+  <header class="fixed top-0 z-50 flex w-full items-center justify-between bg-surface/80 px-[20px] py-md backdrop-blur-md">
+    <div class="h-10 w-10" aria-hidden="true"></div>
+    <h1 class="text-headline-md font-bold text-primary">Baigalaa</h1>
+    <button type="button" class="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-surface-variant/50 active:scale-[0.98]" aria-label="Тохиргоо">
+      <span class="material-symbols-outlined text-primary">settings</span>
+    </button>
+  </header>
+
+  <main class="flex flex-col items-center px-[20px] pb-xxl pt-xxl">
+    <div class="relative mb-xxl mt-xl flex h-48 w-full flex-col items-center justify-center">
+      <div class="voice-orb absolute h-40 w-40 animate-pulse opacity-40"></div>
+      <div class="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-primary-container shadow-[0_0_40px_rgba(103,80,164,0.4)]">
+        <img alt="" class="h-full w-full object-cover opacity-80 mix-blend-overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC67TR76nZDTDyKIKNWYFatbcEWs1yZ91JxBBC-WSYxarcR0PDDeldtycWFbUjcSG0REIegfV565q1JeJXin8cqb2MULHgbsga5keY5wt3TSAM73ax80O1JQwyxnJVoP375S63dZ3GdCNm8FRnfrynGHUAbnVqTn5UWNfr9RPthykCBsPEk6gl9E_fb-xHlUAr39uhUkcznPmBHBIhZ1cBI7HMQcKvKixZd7nclTTuNwdPTZEZ2PDrfd5b6YW_vpigIPS1uwwL-4W3x" />
+      </div>
+    </div>
+
+    <div class="mb-xl w-full text-center">
+      <h2 class="mb-sm text-headline-lg font-bold text-on-background">Нэвтрэх</h2>
+      <p class="text-body-lg text-on-surface-variant">Тавтай морил</p>
+    </div>
+
+    <section class="w-full rounded-[20px] border border-surface-variant/20 bg-surface-container-lowest p-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
+      <p class="mb-lg text-center text-label-md text-on-surface-variant leading-relaxed">
+        Get a one-time code by email and enter it below.
+      </p>
+      <div class="mb-md">
+        <label class="mb-xs ml-xs block text-label-sm uppercase text-primary" for="email">И-МЭЙЛ</label>
+        <input id="email" class="h-11 w-full rounded-xl border-none bg-[#F5F3FF] px-md text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary-container" placeholder="email@example.com" type="email" autocomplete="email" />
+      </div>
+      <div class="mb-lg">
+        <label class="mb-xs ml-xs block text-label-sm uppercase text-primary" for="otp">НЭГ УДААГИЙН КОД</label>
+        <input id="otp" class="h-11 w-full rounded-xl border-none bg-[#F5F3FF] px-md text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary-container" placeholder="000000" type="text" inputmode="numeric" autocomplete="one-time-code" />
+      </div>
+      <div class="flex flex-col gap-md">
+        <button type="button" class="flex h-11 w-full items-center justify-center rounded-full border-2 border-primary text-label-md text-primary transition-all hover:bg-primary/5 active:scale-[0.98]">Код авах</button>
+        <button type="button" class="flex h-11 w-full items-center justify-center rounded-full bg-primary text-label-md text-on-primary shadow-lg shadow-primary/20 transition-all hover:opacity-90 active:scale-[0.98]">Нэвтрэх</button>
+      </div>
+    </section>
+
+    <button type="button" class="mt-lg rounded-full px-md py-sm text-label-md text-primary transition-colors hover:bg-primary/5">Бүртгэл байхгүй юу? Бүртгүүлэх</button>
+  </main>
+
+  <footer class="fixed bottom-gutter-mobile left-[20px] right-[20px] flex justify-center pb-4">
+    <div class="flex items-center gap-sm rounded-full bg-surface-container-high px-lg py-xs">
+      <div class="h-2 w-2 animate-pulse rounded-full bg-primary"></div>
+      <span class="text-label-sm text-on-surface-variant">Ready</span>
+    </div>
+  </footer>
+</body>
+</html>

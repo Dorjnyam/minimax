@@ -18,12 +18,10 @@ class BaigalaaApp extends StatelessWidget {
     super.key,
     this.authRepository,
     this.authStorage,
-    this.gateSplashDuration = const Duration(milliseconds: 900),
   });
 
   final AuthRepository? authRepository;
   final AuthStorage? authStorage;
-  final Duration gateSplashDuration;
 
   @override
   Widget build(BuildContext context) {
@@ -81,10 +79,7 @@ class BaigalaaApp extends StatelessWidget {
             ),
           ),
         ),
-        home: AuthGate(
-          storage: authStorage ?? const SecureAuthStorage(),
-          splashDuration: gateSplashDuration,
-        ),
+        home: AuthGate(storage: authStorage ?? const SecureAuthStorage()),
       ),
     );
   }

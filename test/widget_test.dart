@@ -13,30 +13,30 @@ import 'package:minimax/features/assistant/presentation/assistant_page.dart';
 import 'package:minimax/features/assistant/services/assistant_audio_recorder.dart';
 import 'package:minimax/features/auth/data/auth_repository.dart';
 import 'package:minimax/features/auth/data/auth_storage.dart';
-import 'package:minimax/shared/services/maps_launcher_service.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
+import 'package:minimax/shared/services/maps_launcher_service.dart';
 
 void main() {
-  testWidgets('First launch shows onboarding then auth', (tester) async {
+  testWidgets('First launch opens login screen immediately', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       BaigalaaApp(
         authStorage: MemoryAuthStorage(),
-        gateSplashDuration: Duration.zero,
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Talk to Baigalaa'), findsOneWidget);
-    expect(find.text('Get Started'), findsOneWidget);
-
-    await tester.tap(find.text('Get Started'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('Sign in to Baigalaa'), findsOneWidget);
-    expect(find.text('Login'), findsWidgets);
-    expect(find.text('Sign up'), findsOneWidget);
+    expect(
+      find.text('Тавтай морилно уу', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Бүртгэл байхгүй юу? Бүртгүүлэх', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(find.text('И-МЭЙЛ', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('Saved session enters shell and swipes through real pages', (
@@ -46,11 +46,9 @@ void main() {
       BaigalaaApp(
         authRepository: _profileRepository(),
         authStorage: MemoryAuthStorage({
-          authOnboardingCompletedStorageKey: 'true',
           apiBaseUrlStorageKey: 'http://api.test',
           apiAccessTokenStorageKey: 'a1',
         }),
-        gateSplashDuration: Duration.zero,
       ),
     );
     await tester.pump();

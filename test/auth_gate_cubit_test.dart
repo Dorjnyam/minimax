@@ -10,23 +10,21 @@ import 'package:minimax/features/auth/gate/auth_gate_state.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
 
 void main() {
-  test('first launch shows onboarding', () async {
+  test('first launch goes straight to auth (no onboarding gate)', () async {
     final cubit = AuthGateCubit(
       repository: _repo((method, uri, headers, body) async {
         return http.Response('{}', 500);
       }),
       storage: MemoryAuthStorage(),
-      splashDuration: Duration.zero,
     );
 
     await cubit.start();
 
-    expect(cubit.state.stage, AuthGateStage.onboarding);
+    expect(cubit.state.stage, AuthGateStage.auth);
   });
 
   test('saved access token validates profile and enters app', () async {
     final storage = MemoryAuthStorage({
-      authOnboardingCompletedStorageKey: 'true',
       apiBaseUrlStorageKey: 'http://api.test',
       apiAccessTokenStorageKey: 'a1',
     });
@@ -41,7 +39,6 @@ void main() {
         });
       }),
       storage: storage,
-      splashDuration: Duration.zero,
     );
 
     await cubit.start();
@@ -53,7 +50,6 @@ void main() {
 
   test('expired access token refreshes before entering app', () async {
     final storage = MemoryAuthStorage({
-      authOnboardingCompletedStorageKey: 'true',
       apiBaseUrlStorageKey: 'http://api.test',
       apiAccessTokenStorageKey: 'old',
       apiRefreshTokenStorageKey: 'r1',
@@ -73,7 +69,6 @@ void main() {
         return http.Response('expired', 401);
       }),
       storage: storage,
-      splashDuration: Duration.zero,
     );
 
     await cubit.start();
@@ -85,7 +80,6 @@ void main() {
 
   test('invalid saved session clears tokens and shows auth', () async {
     final storage = MemoryAuthStorage({
-      authOnboardingCompletedStorageKey: 'true',
       apiAccessTokenStorageKey: 'bad',
       apiRefreshTokenStorageKey: 'bad-refresh',
     });
@@ -94,7 +88,6 @@ void main() {
         return http.Response('invalid', 401);
       }),
       storage: storage,
-      splashDuration: Duration.zero,
     );
 
     await cubit.start();

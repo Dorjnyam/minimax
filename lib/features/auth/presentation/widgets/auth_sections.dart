@@ -5,23 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../../shared/constants/baigalaa_constants.dart';
 import '../../bloc/auth_cubit.dart';
 import '../../domain/auth_models.dart';
+import '../auth_theme.dart';
 import 'auth_fields.dart';
-
-class ConnectionPanel extends StatelessWidget {
-  const ConnectionPanel({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white.withValues(alpha: 0.94),
-      child: const ListTile(
-        leading: Icon(Icons.tune),
-        title: Text('Backend address'),
-        subtitle: Text(defaultApiBaseUrl),
-      ),
-    );
-  }
-}
 
 class SignUpSection extends StatefulWidget {
   const SignUpSection({
@@ -31,6 +16,7 @@ class SignUpSection extends StatefulWidget {
     required this.fullName,
     required this.phone,
     required this.isBusy,
+    required this.onGoLogin,
   });
 
   final AuthCubit cubit;
@@ -38,6 +24,7 @@ class SignUpSection extends StatefulWidget {
   final TextEditingController fullName;
   final TextEditingController phone;
   final bool isBusy;
+  final VoidCallback onGoLogin;
 
   @override
   State<SignUpSection> createState() => _SignUpSectionState();
@@ -62,53 +49,68 @@ class _SignUpSectionState extends State<SignUpSection> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthPanel(
-      title: 'Create account',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Enter your details once, then verify your email with OTP.',
-                style: TextStyle(color: Colors.black.withValues(alpha: 0.58)),
+        AuthPanel(
+          title: '',
+          darkNeon: true,
+          children: [
+            Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(crossAxisAlignment: CrossAxisAlignment.start),
+                  const SizedBox(height: 16),
+                  AuthTextField(
+                    controller: widget.email,
+                    label: 'И-МЭЙЛ',
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
+                    validator: _emailValidator,
+                    darkNeon: true,
+                  ),
+                  AuthTextField(
+                    controller: widget.fullName,
+                    label: 'БҮТЭН НЭР',
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
+                    validator: _nameValidator,
+                    darkNeon: true,
+                  ),
+                  AuthTextField(
+                    controller: widget.phone,
+                    label: 'УТАСНЫ ДУГААР',
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.telephoneNumber],
+                    validator: _phoneValidator,
+                    darkNeon: true,
+                  ),
+                  NeonAuthBarButton(
+                    label: 'Бүртгүүлэх',
+                    onPressed: _submit,
+                    isBusy: widget.isBusy,
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              AuthTextField(
-                controller: widget.email,
-                label: 'Email',
-                icon: Icons.email,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.email],
-                validator: _emailValidator,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: TextButton(
+            onPressed: widget.isBusy ? null : widget.onGoLogin,
+            child: Text(
+              'Бүртгэлтэй юу? Нэвтрэх',
+              style: TextStyle(
+                color: AuthTheme.primary.withValues(alpha: 0.95),
+                fontWeight: FontWeight.w600,
               ),
-              AuthTextField(
-                controller: widget.fullName,
-                label: 'Full name',
-                icon: Icons.person,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.name],
-                validator: _nameValidator,
-              ),
-              AuthTextField(
-                controller: widget.phone,
-                label: 'Phone',
-                icon: Icons.phone,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.done,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                validator: _phoneValidator,
-              ),
-              AuthActionButton(
-                label: 'Create account',
-                icon: Icons.person_add,
-                isBusy: widget.isBusy,
-                onPressed: _submit,
-              ),
-            ],
+            ),
           ),
         ),
       ],
@@ -168,7 +170,8 @@ class _LoginSectionState extends State<LoginSection> {
   @override
   Widget build(BuildContext context) {
     return AuthPanel(
-      title: 'Login with OTP',
+      title: '',
+      darkNeon: true,
       children: [
         Form(
           key: _formKey,
@@ -176,39 +179,37 @@ class _LoginSectionState extends State<LoginSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Send a one-time code to your email, then enter it below.',
-                style: TextStyle(color: Colors.black.withValues(alpha: 0.58)),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               AuthTextField(
                 controller: widget.email,
-                label: 'Email',
-                icon: Icons.email,
+                label: 'И-МЭЙЛ',
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
                 validator: _emailValidator,
+                darkNeon: true,
               ),
               AuthTextField(
                 controller: widget.otp,
-                label: 'One-time code',
-                icon: Icons.password,
+                label: 'НЭГ УДААГИЙН КОД',
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.oneTimeCode],
                 validator: (value) => _otpValidator(value, _requireOtp),
+                darkNeon: true,
               ),
-              FilledButton.tonalIcon(
-                onPressed: widget.isBusy ? null : _sendOtp,
-                icon: const Icon(Icons.sms),
-                label: const Text('Send OTP'),
+              const SizedBox(height: 4),
+              NeonAuthBarButton(
+                label: 'Код авах',
+                secondary: true,
+                isBusy: widget.isBusy,
+                onPressed: _sendOtp,
               ),
-              const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: widget.isBusy ? null : _verifyOtp,
-                icon: const Icon(Icons.verified),
-                label: const Text('Verify OTP'),
+              const SizedBox(height: 10),
+              NeonAuthBarButton(
+                label: 'Нэвтрэх',
+                isBusy: widget.isBusy,
+                onPressed: _verifyOtp,
               ),
             ],
           ),
@@ -239,63 +240,113 @@ class ProfileSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuthPanel(
-      title: 'Profile',
+      title: '',
+      darkNeon: true,
       children: [
-        _ProfileRow(label: 'Email', value: user.email),
-        _ProfileRow(label: 'Full name', value: user.fullName),
-        _ProfileRow(label: 'Phone', value: user.phone),
-        const SizedBox(height: 8),
-        AuthActionButton(
-          label: 'Refresh profile',
-          icon: Icons.account_circle,
+        Container(
+          decoration: BoxDecoration(
+            color: AuthTheme.surfaceLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AuthTheme.outlineVariant.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Column(
+            children: [
+              _ProfileField(
+                label: 'И-мэйл',
+                value: user.email,
+                showDivider: true,
+              ),
+              _ProfileField(
+                label: 'Бүтэн нэр',
+                value: user.fullName,
+                showDivider: true,
+              ),
+              _ProfileField(
+                label: 'Утасны дугаар',
+                value: user.phone,
+                showDivider: false,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        NeonAuthBarButton(
+          label: 'Профайл шинэчлэх',
           isBusy: isBusy,
-          enabled: hasToken,
-          onPressed: () =>
-              unawaited(cubit.loadProfile(baseUrl: defaultApiBaseUrl)),
+          onPressed: (!hasToken || isBusy)
+              ? null
+              : () => unawaited(cubit.loadProfile(baseUrl: defaultApiBaseUrl)),
         ),
-        const SizedBox(height: 8),
-        FilledButton.icon(
+        const SizedBox(height: 10),
+        NeonAuthBarButton(
+          label: 'Апп нээх',
           onPressed: hasToken ? onEnterApp : null,
-          icon: const Icon(Icons.arrow_forward),
-          label: const Text('Enter App'),
+          isBusy: false,
         ),
-        OutlinedButton.icon(
+        const SizedBox(height: 10),
+        NeonAuthBarButton(
+          label: 'Гарах',
+          secondary: true,
           onPressed: isBusy ? null : onLogout,
-          icon: const Icon(Icons.logout),
-          label: const Text('Logout'),
+          isBusy: false,
         ),
       ],
     );
   }
 }
 
-class _ProfileRow extends StatelessWidget {
-  const _ProfileRow({required this.label, required this.value});
+class _ProfileField extends StatelessWidget {
+  const _ProfileField({
+    required this.label,
+    required this.value,
+    required this.showDivider,
+  });
 
   final String label;
   final String value;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 86,
-            child: Text(
-              label,
-              style: TextStyle(color: Colors.black.withValues(alpha: 0.56)),
-            ),
+    final display = value.isEmpty ? '—' : value;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AuthTheme.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                display,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  height: 1.35,
+                  color: AuthTheme.onSurface,
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? '-' : value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+        ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: AuthTheme.outlineVariant.withValues(alpha: 0.45),
           ),
-        ],
-      ),
+      ],
     );
   }
 }
