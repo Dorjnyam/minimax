@@ -113,11 +113,14 @@ class AssistantChatService {
   }
 
   Future<_ChatSession> _session() async {
-    final token = await _accessTokenProvider.ensureAccessToken();
-    if (token == null || token.trim().isEmpty) {
+    var token = (await _accessTokenProvider.ensureAccessToken())?.trim();
+    if (token == null || token.isEmpty) {
+      token = defaultHackathonAccessToken.trim();
+    }
+    if (token.isEmpty) {
       throw StateError('Please log in again.');
     }
-    return _ChatSession(baseUrl: defaultApiBaseUrl, token: token.trim());
+    return _ChatSession(baseUrl: defaultApiBaseUrl, token: token);
   }
 
   Future<String> _conversationId(
@@ -130,6 +133,10 @@ class AssistantChatService {
     final stored = await _authStorage.read(apiConversationIdStorageKey);
     if (stored != null && stored.trim().isNotEmpty) {
       return stored.trim();
+    }
+    final configuredId = defaultHackathonConversationId.trim();
+    if (configuredId.isNotEmpty) {
+      return configuredId;
     }
     final conversations = await _chatRepository.conversations(
       baseUrl: session.baseUrl,

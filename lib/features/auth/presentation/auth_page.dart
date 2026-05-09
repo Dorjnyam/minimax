@@ -26,7 +26,6 @@ class _AuthPageState extends State<AuthPage> {
   final _fullName = TextEditingController();
   final _phone = TextEditingController();
   final _otp = TextEditingController();
-  bool _hydrated = false;
 
   @override
   void initState() {
@@ -43,22 +42,6 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  void _sync(AuthState state) {
-    if (_hydrated) {
-      return;
-    }
-    _set(_email, state.email);
-    _set(_fullName, state.user.fullName);
-    _set(_phone, state.user.phone);
-    _hydrated = true;
-  }
-
-  void _set(TextEditingController controller, String value) {
-    if (value.isNotEmpty && controller.text != value) {
-      controller.text = value;
-    }
-  }
-
   Future<void> _logout(AuthCubit cubit) async {
     await cubit.logout();
     widget.onLogout?.call();
@@ -66,8 +49,7 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AuthCubit, AuthState>(
-      listener: (_, state) => _sync(state),
+    return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         final cubit = context.read<AuthCubit>();
         final isProfile = state.view == AuthView.profile;

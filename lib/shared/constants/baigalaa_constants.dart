@@ -13,6 +13,14 @@ const defaultApiBaseUrlLocalhost = 'http://192.168.0.153:8778';
 String get defaultApiBaseUrl =>
     kIsWeb ? defaultApiBaseUrlLocalhost : defaultApiBaseUrlLan;
 
+/// Fallback bearer token when secure storage has no session (e.g. hackathon demo).
+/// Prefer OTP login; this is used by assistant/chat when no stored token exists.
+const defaultHackathonAccessToken =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJoYWNrYXRob24tYXBpIiwiYXVkIjoiaGFja2F0aG9uLW1vYmlsZSIsInN1YiI6IjY5ZmYyNjhiNDNiMTA2Y2ZkZjBmMjRjNyIsImlhdCI6MTc3ODM2MDA0OSwianRpIjoiYjU5ODE0YjA0YWI2NDY0NzgzZGQ4N2Y1NDJhNzVmYTUiLCJyb2xlcyI6W10sInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3Nzg0NDY0NDl9.iORMGdOe8UYgmKoqzcrmvRFAJHOxxg-P8DFMXyrS5ek';
+
+/// Default chat thread when none is stored (assistant loads this conversation).
+const defaultHackathonConversationId = '69ff9ef1ac7626f19bd199c9';
+
 const apiBaseUrlStorageKey = 'hackathon_api_base_url';
 const apiAccessTokenStorageKey = 'hackathon_api_access_token';
 const apiRefreshTokenStorageKey = 'hackathon_api_refresh_token';

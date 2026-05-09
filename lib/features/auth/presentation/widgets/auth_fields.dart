@@ -13,6 +13,8 @@ class AuthTextField extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.autofillHints,
+    this.enableSuggestions = true,
+    this.autocorrect = true,
     this.validator,
   });
 
@@ -26,6 +28,8 @@ class AuthTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
+  final bool enableSuggestions;
+  final bool autocorrect;
   final FormFieldValidator<String>? validator;
 
   static const Color _focusRing = AuthTheme.primaryContainer;
@@ -76,6 +80,8 @@ class AuthTextField extends StatelessWidget {
         keyboardType: keyboardType,
         textInputAction: textInputAction,
         autofillHints: autofillHints,
+        enableSuggestions: enableSuggestions,
+        autocorrect: autocorrect,
         validator: validator,
         style: darkNeon
             ? const TextStyle(color: AuthTheme.onSurface, fontWeight: FontWeight.w500)

@@ -6,7 +6,7 @@ import 'auth_storage.dart';
 /// Supplies a valid access token, refreshing via [AuthRepository.refresh] when
 /// `/auth/me` fails (expired access token).
 abstract interface class AccessTokenProvider {
-  Future<String?> ensureAccessToken({String baseUrl = defaultApiBaseUrl});
+  Future<String?> ensureAccessToken({String? baseUrl});
 }
 
 /// Test helper: returns a fixed token without calling the API.
@@ -16,7 +16,7 @@ final class FixedAccessTokenProvider implements AccessTokenProvider {
   final String token;
 
   @override
-  Future<String?> ensureAccessToken({String baseUrl = defaultApiBaseUrl}) async {
+  Future<String?> ensureAccessToken({String? baseUrl}) async {
     final t = token.trim();
     return t.isEmpty ? null : t;
   }
@@ -33,7 +33,8 @@ final class SessionRefreshService implements AccessTokenProvider {
   final AuthStorage _storage;
 
   @override
-  Future<String?> ensureAccessToken({String baseUrl = defaultApiBaseUrl}) async {
+  Future<String?> ensureAccessToken({String? baseUrl}) async {
+    final resolvedBaseUrl = baseUrl ?? defaultApiBaseUrl;
     final access = await _storage.read(apiAccessTokenStorageKey) ?? '';
     final refresh = await _storage.read(apiRefreshTokenStorageKey) ?? '';
 
@@ -43,7 +44,7 @@ final class SessionRefreshService implements AccessTokenProvider {
 
     if (access.isNotEmpty) {
       try {
-        await _repository.me(baseUrl: baseUrl, accessToken: access);
+        await _repository.me(baseUrl: resolvedBaseUrl, accessToken: access);
         return access;
       } catch (_) {}
     }
@@ -54,7 +55,7 @@ final class SessionRefreshService implements AccessTokenProvider {
 
     try {
       final session = await _repository.refresh(
-        baseUrl: baseUrl,
+        baseUrl: resolvedBaseUrl,
         refreshToken: refresh,
       );
       final merged = AuthSession(
@@ -66,7 +67,7 @@ final class SessionRefreshService implements AccessTokenProvider {
       }
       await _storage.write(apiAccessTokenStorageKey, merged.accessToken);
       await _storage.write(apiRefreshTokenStorageKey, merged.refreshToken);
-      await _repository.me(baseUrl: baseUrl, accessToken: merged.accessToken);
+      await _repository.me(baseUrl: resolvedBaseUrl, accessToken: merged.accessToken);
       return merged.accessToken;
     } catch (_) {
       return null;
