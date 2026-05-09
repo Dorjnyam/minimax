@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Hub for profile, social, and policy — same gradient shell as [AssistantPage].
-/// Placeholder rows until backend wiring; visuals can be swapped later.
+import 'policy_document_page.dart';
+import 'profile_legal_content.dart';
+import 'profile_permissions_page.dart';
+
+/// Hub for profile, social, policy, permissions, and scheduled tasks (Baigalaa shell).
 class BaigalaaProfilePage extends StatelessWidget {
   const BaigalaaProfilePage({super.key});
 
@@ -12,6 +15,36 @@ class BaigalaaProfilePage extends StatelessWidget {
       colors: [Color(0xFF14233D), Color(0xFF5855B0), Color(0xFF191C32)],
     ),
   );
+
+  void _openPolicy(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => PolicyDocumentPage(
+          title: ProfileLegalContent.privacyPolicyTitle,
+          bodyText: ProfileLegalContent.privacyPolicyBody,
+        ),
+      ),
+    );
+  }
+
+  void _openTerms(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => PolicyDocumentPage(
+          title: ProfileLegalContent.termsOfServiceTitle,
+          bodyText: ProfileLegalContent.termsOfServiceBody,
+        ),
+      ),
+    );
+  }
+
+  void _openPermissions(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const ProfilePermissionsPage(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,36 +77,110 @@ class BaigalaaProfilePage extends StatelessWidget {
               _SectionCard(
                 title: 'Profile',
                 children: [
-                  _tile(context, Icons.person_outline_rounded, 'Edit profile'),
-                  _tile(context, Icons.notifications_none_rounded, 'Notifications'),
-                  _tile(context, Icons.language_rounded, 'Language & region'),
+                  _ProfileTile(
+                    icon: Icons.person_outline_rounded,
+                    label: 'Edit profile',
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.notifications_none_rounded,
+                    label: 'Notifications',
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.language_rounded,
+                    label: 'Language & region',
+                    onTap: () {},
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
               _SectionCard(
                 title: 'Connections',
                 children: [
-                  _tile(context, Icons.link_rounded, 'Linked accounts'),
-                  _tile(context, Icons.person_add_outlined, 'Invite contacts'),
-                  _tile(context, Icons.sync_alt_rounded, 'Sync preferences'),
+                  _ProfileTile(
+                    icon: Icons.link_rounded,
+                    label: 'Linked accounts',
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.person_add_outlined,
+                    label: 'Invite contacts',
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.sync_alt_rounded,
+                    label: 'Sync preferences',
+                    onTap: () {},
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
               _SectionCard(
                 title: 'Groups & friends',
                 children: [
-                  _tile(context, Icons.groups_outlined, 'Your groups'),
-                  _tile(context, Icons.people_outline_rounded, 'Friends'),
-                  _tile(context, Icons.chat_bubble_outline_rounded, 'Group chats'),
+                  _ProfileTile(
+                    icon: Icons.groups_outlined,
+                    label: 'Your groups',
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.people_outline_rounded,
+                    label: 'Friends',
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    label: 'Group chats',
+                    onTap: () {},
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _SectionCard(
+                title: 'Хуваарьт даалгавар',
+                children: [
+                  _ProfileTile(
+                    icon: Icons.wb_sunny_outlined,
+                    label: 'Өглөөний цаг агаар (жишээ)',
+                    subtitle:
+                        'TODO: Backend — өдөр бүр 08:00-д серверээс өнөөдрийн цаг агаарын '
+                        'мэдээлэл аваад хэрэглэгчид харуулах (жишээ: «Өнөөдөр салхитай, +18°C»).',
+                    showChevron: false,
+                    onTap: () {},
+                  ),
+                  _ProfileTile(
+                    icon: Icons.schedule_rounded,
+                    label: 'Хуваарьт текст → backend',
+                    subtitle:
+                        'TODO: Тодорхой цаг хугацаанд (жишээ нь 8 цагт) текст илгээж, '
+                        'backend-ээс хариу авч дэлгэцэнд гаргах (програмчилсан даалгавар).',
+                    showChevron: false,
+                    onTap: () {},
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
               _SectionCard(
                 title: 'Policy & privacy',
                 children: [
-                  _tile(context, Icons.shield_outlined, 'Privacy policy'),
-                  _tile(context, Icons.description_outlined, 'Terms of service'),
-                  _tile(context, Icons.cookie_outlined, 'Cookies & data'),
+                  _ProfileTile(
+                    icon: Icons.shield_outlined,
+                    label: 'Нууцлалын бодлого',
+                    onTap: () => _openPolicy(context),
+                  ),
+                  _ProfileTile(
+                    icon: Icons.description_outlined,
+                    label: 'Үйлчилгээний нөхцөл',
+                    onTap: () => _openTerms(context),
+                  ),
+                  _ProfileTile(
+                    icon: Icons.admin_panel_settings_outlined,
+                    label: 'Зөвшөөрлүүд',
+                    subtitle:
+                        'Микрофон, байршил, мэдэгдэл — аль нь зөвшөөрөгдсөнийг харах',
+                    onTap: () => _openPermissions(context),
+                  ),
                 ],
               ),
             ],
@@ -81,10 +188,6 @@ class BaigalaaProfilePage extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _tile(BuildContext context, IconData icon, String label) {
-    return _ProfileTile(icon: icon, label: label, onTap: () {});
   }
 }
 
@@ -153,11 +256,15 @@ class _ProfileTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.subtitle,
+    this.showChevron = true,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final String? subtitle;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -171,23 +278,43 @@ class _ProfileTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
+            crossAxisAlignment: subtitle != null
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
               Icon(icon, color: Colors.white.withValues(alpha: 0.88), size: 22),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.58),
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
+              if (showChevron)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white.withValues(alpha: 0.35),
+                ),
             ],
           ),
         ),
