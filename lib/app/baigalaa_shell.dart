@@ -12,11 +12,11 @@ import '../features/chat/data/chat_repository.dart';
 import '../features/chat/data/chat_voice_socket_service.dart';
 import '../features/labs/presentation/labs_page.dart';
 import '../features/setup/presentation/baigalaa_setup_page.dart';
+import '../features/profile/presentation/baigalaa_profile_page.dart';
 import '../features/transit/bloc/transit_cubit.dart';
 import '../features/transit/data/transit_repository.dart';
 import '../features/transit/presentation/transit_page.dart';
 import '../shared/services/maps_launcher_service.dart';
-import '../shared/theme/baigalaa_mesh_background.dart';
 
 class BaigalaaShell extends StatelessWidget {
   const BaigalaaShell({super.key});
@@ -24,42 +24,35 @@ class BaigalaaShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WithForegroundTask(
-      child: BaigalaaMeshBackground(
-        child: PageView(
-          children: [
-            BlocProvider(
-              create: (context) => AssistantCubit(
-                repository: context.read<AssistantRepository>(),
-                mapsLauncher: context.read<MapsLauncherService>(),
-                authStorage: context.read<AuthStorage>(),
-                accessTokenProvider: context.read<SessionRefreshService>(),
-                chatRepository: context.read<ChatRepository>(),
-                chatVoiceSocket: context.read<ChatVoiceSocketService>(),
-                chatAudioPlayback: context.read<ChatAudioPlaybackService>(),
-              ),
-              child: const AssistantPage(),
+      child: PageView(
+        children: [
+          BlocProvider(
+            create: (context) => AssistantCubit(
+              repository: context.read<AssistantRepository>(),
+              mapsLauncher: context.read<MapsLauncherService>(),
+              authStorage: context.read<AuthStorage>(),
+              accessTokenProvider: context.read<SessionRefreshService>(),
+              chatRepository: context.read<ChatRepository>(),
+              chatVoiceSocket: context.read<ChatVoiceSocketService>(),
+              chatAudioPlayback: context.read<ChatAudioPlaybackService>(),
             ),
-            const Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: _SetupAppBar(),
-              body: BaigalaaSetupPage(),
+            child: const AssistantPage(),
+          ),
+          const BaigalaaProfilePage(),
+          const Scaffold(appBar: _SetupAppBar(), body: BaigalaaSetupPage()),
+          Scaffold(
+            appBar: const _LabsAppBar(),
+            body: LabsPage(mapsLauncher: context.read<MapsLauncherService>()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                TransitCubit(repository: context.read<TransitRepository>()),
+            child: const Scaffold(
+              appBar: _TransitAppBar(),
+              body: TransitPage(),
             ),
-            Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: const _LabsAppBar(),
-              body: LabsPage(mapsLauncher: context.read<MapsLauncherService>()),
-            ),
-            BlocProvider(
-              create: (context) =>
-                  TransitCubit(repository: context.read<TransitRepository>()),
-              child: const Scaffold(
-                backgroundColor: Colors.transparent,
-                appBar: _TransitAppBar(),
-                body: TransitPage(),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

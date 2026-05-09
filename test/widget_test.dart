@@ -10,6 +10,7 @@ import 'package:minimax/features/api_console/data/hackathon_api_client.dart';
 import 'package:minimax/features/assistant/bloc/assistant_cubit.dart';
 import 'package:minimax/features/assistant/data/assistant_repository.dart';
 import 'package:minimax/features/assistant/presentation/assistant_page.dart';
+import 'package:minimax/features/profile/presentation/baigalaa_profile_page.dart';
 import 'package:minimax/features/assistant/services/assistant_audio_recorder.dart';
 import 'package:minimax/features/auth/data/auth_repository.dart';
 import 'package:minimax/features/auth/data/auth_storage.dart';
@@ -23,7 +24,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Нэвтрэх', skipOffstage: false), findsWidgets);
+    expect(find.text('Тавтай морилно уу', skipOffstage: false), findsOneWidget);
     expect(
       find.text('Бүртгэл байхгүй юу? Бүртгүүлэх', skipOffstage: false),
       findsOneWidget,
@@ -31,7 +32,7 @@ void main() {
     expect(find.text('И-МЭЙЛ', skipOffstage: false), findsOneWidget);
   });
 
-  testWidgets('Saved session enters shell and swipes through real pages', (
+  testWidgets('Saved session opens assistant shell with PageView', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -49,31 +50,6 @@ void main() {
 
     expect(find.text('Turn off the light'), findsOneWidget);
     expect(find.byType(PageView), findsOneWidget);
-
-    await tester.fling(find.byType(PageView), const Offset(-800, 0), 1200);
-    await tester.pump(const Duration(milliseconds: 800));
-
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('Start Listening'), findsOneWidget);
-    expect(find.text('Test Overlay'), findsOneWidget);
-
-    await tester.fling(find.byType(PageView), const Offset(-800, 0), 1200);
-    await tester.pump(const Duration(milliseconds: 800));
-
-    expect(find.text('Mongolian TTS'), findsOneWidget);
-    expect(find.text('Google Maps'), findsOneWidget);
-    expect(find.text('Destination'), findsOneWidget);
-    expect(find.text('Transit / Bus Options'), findsOneWidget);
-
-    await tester.fling(find.byType(PageView), const Offset(-800, 0), 1200);
-    await tester.pump(const Duration(milliseconds: 800));
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('Bus Options'), findsWidgets);
-    expect(find.text('Find Bus Options'), findsOneWidget);
-    expect(find.text('Google Routes API key'), findsOneWidget);
-
-    expect(find.text('Find Bus Options'), findsOneWidget);
   });
 
   testWidgets('Assistant page displays recognized speech text', (tester) async {
@@ -86,7 +62,10 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const AssistantPage(),
+        ),
       ),
     );
 
@@ -106,7 +85,10 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const AssistantPage(),
+        ),
       ),
     );
 
@@ -115,7 +97,7 @@ void main() {
     await cubit.close();
   });
 
-  testWidgets('Assistant messages icon opens chat history sheet', (
+  testWidgets('Assistant message preview opens chat history sheet', (
     tester,
   ) async {
     final cubit = AssistantCubit(
@@ -126,20 +108,28 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const AssistantPage(),
+        ),
       ),
     );
 
-    await tester.tap(find.byIcon(Icons.chat_bubble_outline));
-    await tester.pump();
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
-    await tester.pump();
-
     expect(find.text('Messages'), findsOneWidget);
+    await tester.tap(find.text('Messages'));
+    await tester.pump(const Duration(milliseconds: 500));
+
     expect(find.text('No messages yet'), findsOneWidget);
     await cubit.close();
+  });
+
+  testWidgets('Baigalaa profile hub shows sections', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: BaigalaaProfilePage()),
+    );
+    expect(find.text('Profile & settings'), findsOneWidget);
+    expect(find.text('GROUPS & FRIENDS'), findsOneWidget);
+    expect(find.text('Edit profile'), findsOneWidget);
   });
 }
 

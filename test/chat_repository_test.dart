@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:minimax/features/api_console/data/hackathon_api_client.dart';
+import 'package:minimax/features/assistant/domain/maps_command.dart';
 import 'package:minimax/features/chat/data/chat_repository.dart';
 import 'package:minimax/features/chat/domain/chat_models.dart';
 
@@ -44,6 +45,24 @@ void main() {
     expect(messages.single.content, 'Сайн байна уу');
     expect(audio.text, 'Хариу');
     expect(audio.audioUrl, '/media/reply.mp3');
+  });
+
+  test('audio response parser attaches maps command from socket type', () {
+    final navigate = ChatAudioResponse.fromData({
+      'type': 'maps_navigate',
+      'lat': 47.916,
+      'lng': 106.917,
+      'name': 'Сүхбаатарын талбай',
+    });
+    expect(navigate.mapsCommand?.type, MapsCommandType.directions);
+    expect(navigate.mapsCommand?.query, 'Сүхбаатарын талбай');
+
+    final route = ChatAudioResponse.fromData({
+      'type': 'maps_route',
+      'destination_lat': 47.916,
+      'destination_lng': 106.917,
+    });
+    expect(route.mapsCommand?.query, '47.916,106.917');
   });
 
   test('audio response parser supports inline base64 audio', () {

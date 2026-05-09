@@ -23,71 +23,98 @@ class AssistantPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AssistantCubit, AssistantState>(
       builder: (context, state) {
-        return Material(
-          color: Colors.transparent,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: _InteractiveOrb(
-                              active: state.isListening,
-                              size: _orbSize(context),
-                              onTap: () => unawaited(
-                                context.read<AssistantCubit>().listen(),
+        return DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF14233D), Color(0xFF5855B0), Color(0xFF191C32)],
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: _InteractiveOrb(
+                                active: state.isListening,
+                                size: _orbSize(context),
+                                onTap: () => unawaited(
+                                  context.read<AssistantCubit>().listen(),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              AssistantChips(
-                                onSelected: (suggestion) => unawaited(
-                                  context.read<AssistantCubit>().runSuggestion(
-                                    suggestion,
+                          const SizedBox(height: 4),
+                          SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AssistantChips(
+                                  onSelected: (suggestion) => unawaited(
+                                    context
+                                        .read<AssistantCubit>()
+                                        .runSuggestion(suggestion),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 14),
-                              _AssistantTranscriptPanel(state: state),
-                              const SizedBox(height: 8),
-                            ],
+                                const SizedBox(height: 14),
+                                _AssistantTranscriptPanel(state: state),
+                                const SizedBox(height: 10),
+                                AssistantMessagePreview(state: state),
+                                if (state.errorMessage != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.errorMessage!,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: const Color(0xFFFFB8B8),
+                                        ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
-                  child: AssistantMicControls(
-                    isListening: state.isListening,
-                    onMicPressed: () =>
-                        unawaited(context.read<AssistantCubit>().listen()),
-                    onClosePressed: () => unawaited(
-                      context.read<AssistantCubit>().submitText(''),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
+                    child: AssistantMicControls(
+                      isListening: state.isListening,
+                      onMicPressed: () =>
+                          unawaited(context.read<AssistantCubit>().listen()),
+                      onClosePressed: () => unawaited(
+                        context.read<AssistantCubit>().submitText(''),
+                      ),
+                      onMessagesPressed: () {
+                        unawaited(
+                          context.read<AssistantCubit>().loadMessages(),
+                        );
+                      },
                     ),
-                    onMessagesPressed: () =>
-                        unawaited(showAssistantMessagesSheet(context)),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

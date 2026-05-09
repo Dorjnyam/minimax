@@ -96,6 +96,10 @@ class _AuthPageState extends State<AuthPage> {
                       ),
                     ),
                   ],
+                  if (state.errorMessage.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _AuthErrorBanner(message: state.errorMessage),
+                  ],
                 ],
               ),
             ),
@@ -181,6 +185,54 @@ class _AuthHero extends StatelessWidget {
             asset: authHeroLottieAsset,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AuthErrorBanner extends StatelessWidget {
+  const _AuthErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: AuthTheme.statusSurface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: AuthTheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AuthTheme.error,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AuthTheme.onErrorContainer,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -315,6 +315,24 @@ class AssistantCubit extends Cubit<AssistantState> {
         }
       }
 
+      String? mapsErr;
+      final mapCmd = reply.mapsCommand;
+      if (mapCmd != null) {
+        emit(
+          state.copyWith(
+            status: AssistantStatus.mapLaunching,
+            response: mapCmd.confirmation,
+            lastCommand: mapCmd,
+            clearError: true,
+          ),
+        );
+        try {
+          await _mapsLauncher.launch(mapCmd);
+        } catch (error) {
+          mapsErr = 'Could not open Google Maps: $error';
+        }
+      }
+
       final assistantText = reply.text.isEmpty
           ? 'Voice response received.'
           : reply.text;
@@ -332,7 +350,8 @@ class AssistantCubit extends Cubit<AssistantState> {
               ? [...state.messages, assistantMessage]
               : freshMessages,
           replyAudioPath: localAudioPath,
-          clearError: localAudioPath.isNotEmpty,
+          errorMessage: mapsErr ?? state.errorMessage,
+          clearError: mapsErr == null && localAudioPath.isNotEmpty,
         ),
       );
     } catch (error) {
@@ -389,6 +408,24 @@ class AssistantCubit extends Cubit<AssistantState> {
         }
       }
 
+      String? mapsErr;
+      final mapCmd = reply.mapsCommand;
+      if (mapCmd != null) {
+        emit(
+          state.copyWith(
+            status: AssistantStatus.mapLaunching,
+            response: mapCmd.confirmation,
+            lastCommand: mapCmd,
+            clearError: true,
+          ),
+        );
+        try {
+          await _mapsLauncher.launch(mapCmd);
+        } catch (error) {
+          mapsErr = 'Could not open Google Maps: $error';
+        }
+      }
+
       final assistantText =
           reply.text.isEmpty ? 'Received.' : reply.text;
       final assistantMessage = ChatMessage.local(
@@ -405,7 +442,8 @@ class AssistantCubit extends Cubit<AssistantState> {
               ? [...state.messages, assistantMessage]
               : freshMessages,
           replyAudioPath: localAudioPath,
-          clearError: localAudioPath.isNotEmpty,
+          errorMessage: mapsErr ?? state.errorMessage,
+          clearError: mapsErr == null && localAudioPath.isNotEmpty,
         ),
       );
     } catch (error) {

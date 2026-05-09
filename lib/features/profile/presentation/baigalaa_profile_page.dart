@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../auth/gate/auth_gate_cubit.dart';
 import 'policy_document_page.dart';
 import 'profile_legal_content.dart';
 import 'profile_permissions_page.dart';
@@ -85,11 +87,6 @@ class BaigalaaProfilePage extends StatelessWidget {
                   _ProfileTile(
                     icon: Icons.notifications_none_rounded,
                     label: 'Notifications',
-                    onTap: () {},
-                  ),
-                  _ProfileTile(
-                    icon: Icons.language_rounded,
-                    label: 'Language & region',
                     onTap: () {},
                   ),
                 ],
@@ -182,6 +179,34 @@ class BaigalaaProfilePage extends StatelessWidget {
                     onTap: () => _openPermissions(context),
                   ),
                 ],
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.read<AuthGateCubit>().signOut(),
+                  icon: Icon(
+                    Icons.logout_rounded,
+                    color: Colors.red.shade200,
+                    size: 20,
+                  ),
+                  label: Text(
+                    'Гарах',
+                    style: TextStyle(
+                      color: Colors.red.shade100,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade100,
+                    side: BorderSide(color: Colors.red.withValues(alpha: 0.45)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
