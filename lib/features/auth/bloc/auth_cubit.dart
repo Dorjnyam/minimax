@@ -117,14 +117,6 @@ class AuthCubit extends Cubit<AuthState> {
       );
       await _saveSession(session);
       await _storage.write(authLastEmailStorageKey, email);
-      emit(
-        state.copyWith(
-          status: AuthStatus.success,
-          session: session,
-          email: email,
-          clearError: true,
-        ),
-      );
       final user = await _repository.me(
         baseUrl: url,
         accessToken: session.accessToken,
@@ -133,8 +125,10 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           status: AuthStatus.success,
-          view: AuthView.profile,
+          session: session,
+          email: email,
           user: user,
+          view: AuthView.login,
           clearError: true,
         ),
       );
@@ -162,23 +156,6 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           status: AuthStatus.success,
           session: merged,
-          clearError: true,
-        ),
-      );
-    });
-  }
-
-  Future<void> loadProfile({String? baseUrl, String? accessToken}) async {
-    final url = _validBaseUrl(baseUrl ?? state.baseUrl);
-    final token = accessToken ?? state.session.accessToken;
-    await _run(() async {
-      final user = await _repository.me(baseUrl: url, accessToken: token);
-      await _saveUser(user);
-      emit(
-        state.copyWith(
-          status: AuthStatus.success,
-          view: AuthView.profile,
-          user: user,
           clearError: true,
         ),
       );

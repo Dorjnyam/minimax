@@ -53,7 +53,7 @@ void main() {
 
     expect(calledPaths, contains('/api/v1/auth/me'));
     expect(meAuthHeader, 'Bearer a1');
-    expect(cubit.state.view, AuthView.profile);
+    expect(cubit.state.view, AuthView.login);
     expect(cubit.state.session.accessToken, 'a1');
     expect(cubit.state.user.fullName, fullName);
   });

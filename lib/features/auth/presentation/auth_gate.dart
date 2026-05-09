@@ -56,7 +56,6 @@ class _AuthGateView extends StatelessWidget {
           ),
           AuthGateStage.auth => AuthPage(
             onEnterApp: context.read<AuthGateCubit>().enterApp,
-            onLogout: () => unawaited(context.read<AuthGateCubit>().signOut()),
           ),
           AuthGateStage.app => const BaigalaaShell(),
         };

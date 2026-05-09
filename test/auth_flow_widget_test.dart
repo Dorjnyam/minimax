@@ -11,7 +11,7 @@ import 'package:minimax/features/auth/data/auth_storage.dart';
 import 'package:minimax/features/auth/presentation/auth_page.dart';
 
 void main() {
-  testWidgets('OTP verify success shows profile and enter app action', (
+  testWidgets('OTP verify success enters app directly', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(800, 1000);
@@ -48,17 +48,12 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).first, 'themargad@gmail.com');
     await tester.enterText(find.byType(TextFormField).at(1), '111111');
-    await tester.tap(find.text('НЭВТРЭХ'));
+    await tester.tap(find.text('Нэвтрэх').at(1));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('Профайл бэлэн'), findsOneWidget);
-    expect(find.text('themargad@gmail.com'), findsOneWidget);
-    expect(find.text('АПП НЭЭХ'), findsOneWidget);
-
-    await tester.ensureVisible(find.text('АПП НЭЭХ'));
-    await tester.tap(find.text('АПП НЭЭХ'));
     expect(entered, isTrue);
+    expect(find.text('Апп нээх'), findsNothing);
   });
 }
 

@@ -4,7 +4,7 @@ import '../domain/auth_models.dart';
 
 enum AuthStatus { initial, loading, success, failure }
 
-enum AuthView { signUp, login, profile }
+enum AuthView { signUp, login }
 
 class AuthState extends Equatable {
   const AuthState({

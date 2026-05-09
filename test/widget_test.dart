@@ -16,7 +16,6 @@ import 'package:minimax/features/auth/data/auth_storage.dart';
 import 'package:minimax/features/auth/data/session_refresh_service.dart';
 import 'package:minimax/shared/services/maps_launcher_service.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
-import 'package:minimax/shared/services/maps_launcher_service.dart';
 
 Future<void> _noopLogout() async {}
 

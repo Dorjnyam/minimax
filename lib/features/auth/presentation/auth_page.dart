@@ -12,10 +12,9 @@ import 'widgets/auth_hero_lottie.dart';
 import 'widgets/auth_sections.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key, this.onEnterApp, this.onLogout});
+  const AuthPage({super.key, this.onEnterApp});
 
   final VoidCallback? onEnterApp;
-  final VoidCallback? onLogout;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -42,23 +41,19 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  Future<void> _logout(AuthCubit cubit) async {
-    await cubit.logout();
-    widget.onLogout?.call();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocConsumer<AuthCubit, AuthState>(
+      listenWhen: (previous, current) =>
+          current.status == AuthStatus.success &&
+          current.hasAccessToken &&
+          !previous.hasAccessToken,
+      listener: (context, state) {
+        (widget.onEnterApp ?? () {})();
+      },
       builder: (context, state) {
         final cubit = context.read<AuthCubit>();
-        final isProfile = state.view == AuthView.profile;
-        final listPad = EdgeInsets.fromLTRB(
-          20,
-          isProfile ? 0 : 16,
-          20,
-          isProfile ? 32 : 40,
-        );
+        const listPad = EdgeInsets.fromLTRB(20, 16, 20, 40);
         return Scaffold(
           body: DecoratedBox(
             decoration: BoxDecoration(gradient: AuthTheme.backgroundGradient),
@@ -67,17 +62,8 @@ class _AuthPageState extends State<AuthPage> {
                 padding: listPad,
                 children: [
                   _AuthHero(state: state),
-                  SizedBox(height: state.view == AuthView.profile ? 20 : 28),
-                  if (state.view == AuthView.profile)
-                    ProfileSection(
-                      cubit: cubit,
-                      user: state.user,
-                      hasToken: state.hasAccessToken,
-                      isBusy: state.isBusy,
-                      onEnterApp: widget.onEnterApp ?? () {},
-                      onLogout: () => unawaited(_logout(cubit)),
-                    )
-                  else if (state.view == AuthView.signUp)
+                  const SizedBox(height: 28),
+                  if (state.view == AuthView.signUp)
                     SignUpSection(
                       cubit: cubit,
                       email: _email,
@@ -130,55 +116,14 @@ class _AuthHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brandChip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AuthTheme.primary.withValues(alpha: 0.35)),
-        color: AuthTheme.primary.withValues(alpha: 0.06),
-      ),
-      child: const Text(
-        'Baigalaa',
-        style: TextStyle(
-          color: AuthTheme.primary,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-
     final headline = switch (state.view) {
       AuthView.signUp => 'Бүртгэл үүсгэх',
-      AuthView.profile => 'Миний бүртгэл',
       AuthView.login => 'Нэвтрэх',
     };
 
-    if (state.view == AuthView.profile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          brandChip,
-          const SizedBox(height: 14),
-          Text(
-            headline,
-            style: const TextStyle(
-              color: AuthTheme.onSurface,
-              fontSize: 30,
-              height: 1.08,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 22),
-          Center(child: _profileOrb()),
-        ],
-      );
-    }
-
     final graphic = _glowingLottie(context, switch (state.view) {
       AuthView.signUp => Icons.person_add_alt_1,
-      _ => Icons.graphic_eq,
+      AuthView.login => Icons.graphic_eq,
     });
 
     return Column(
@@ -201,47 +146,6 @@ class _AuthHero extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _profileOrb() {
-    return SizedBox(
-      height: 132,
-      width: double.infinity,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 112,
-            height: 112,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AuthTheme.primaryContainer.withValues(alpha: 0.12),
-              boxShadow: [
-                BoxShadow(
-                  color: AuthTheme.primaryContainer.withValues(alpha: 0.22),
-                  blurRadius: 36,
-                  spreadRadius: -6,
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 76,
-            height: 76,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AuthTheme.primaryContainer,
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              size: 42,
-              color: AuthTheme.onPrimaryContainer,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
