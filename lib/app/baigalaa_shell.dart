@@ -12,6 +12,7 @@ import '../features/chat/data/chat_repository.dart';
 import '../features/chat/data/chat_voice_socket_service.dart';
 import '../features/labs/presentation/labs_page.dart';
 import '../features/setup/presentation/baigalaa_setup_page.dart';
+import '../features/profile/presentation/baigalaa_profile_page.dart';
 import '../features/transit/bloc/transit_cubit.dart';
 import '../features/transit/data/transit_repository.dart';
 import '../features/transit/presentation/transit_page.dart';
@@ -37,6 +38,7 @@ class BaigalaaShell extends StatelessWidget {
             ),
             child: const AssistantPage(),
           ),
+          const BaigalaaProfilePage(),
           const Scaffold(appBar: _SetupAppBar(), body: BaigalaaSetupPage()),
           Scaffold(
             appBar: const _LabsAppBar(),
