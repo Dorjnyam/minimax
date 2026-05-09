@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/constants/baigalaa_constants.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import 'auth_splash_page.dart';
+import 'auth_theme.dart';
+import 'widgets/auth_hero_lottie.dart';
 import 'widgets/auth_sections.dart';
 
 class AuthPage extends StatefulWidget {
@@ -67,46 +70,64 @@ class _AuthPageState extends State<AuthPage> {
       listener: (_, state) => _sync(state),
       builder: (context, state) {
         final cubit = context.read<AuthCubit>();
+        final isProfile = state.view == AuthView.profile;
+        final listPad = EdgeInsets.fromLTRB(20, 0, 20, isProfile ? 32 : 40);
         return Scaffold(
-          body: EntryGradient(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              children: [
-                _AuthHero(state: state),
-                const SizedBox(height: 22),
-                if (state.view == AuthView.profile)
-                  ProfileSection(
-                    cubit: cubit,
-                    user: state.user,
-                    hasToken: state.hasAccessToken,
-                    isBusy: state.isBusy,
-                    onEnterApp: widget.onEnterApp ?? () {},
-                    onLogout: () => unawaited(_logout(cubit)),
-                  )
-                else ...[
-                  _AuthTabs(state: state, onChanged: cubit.show),
-                  const SizedBox(height: 14),
-                  if (state.view == AuthView.signUp)
+          body: DecoratedBox(
+            decoration: BoxDecoration(gradient: AuthTheme.backgroundGradient),
+            child: SafeArea(
+              child: ListView(
+                padding: listPad,
+                children: [
+                  _AuthHero(state: state),
+                  SizedBox(height: state.view == AuthView.profile ? 20 : 28),
+                  if (state.view == AuthView.profile)
+                    ProfileSection(
+                      cubit: cubit,
+                      user: state.user,
+                      hasToken: state.hasAccessToken,
+                      isBusy: state.isBusy,
+                      onEnterApp: widget.onEnterApp ?? () {},
+                      onLogout: () => unawaited(_logout(cubit)),
+                    )
+                  else if (state.view == AuthView.signUp)
                     SignUpSection(
                       cubit: cubit,
                       email: _email,
                       fullName: _fullName,
                       phone: _phone,
                       isBusy: state.isBusy,
+                      onGoLogin: () => cubit.show(AuthView.login),
                     )
-                  else
+                  else ...[
                     LoginSection(
                       cubit: cubit,
                       email: _email,
                       otp: _otp,
                       isBusy: state.isBusy,
                     ),
+                    const SizedBox(height: 14),
+                    Center(
+                      child: TextButton(
+                        onPressed: state.isBusy
+                            ? null
+                            : () => cubit.show(AuthView.signUp),
+                        child: Text(
+                          'Бүртгэл байхгүй юу? Бүртгүүлэх',
+                          style: TextStyle(
+                            color: AuthTheme.primary.withValues(alpha: 0.95),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (state.errorMessage.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _AuthErrorBanner(message: state.errorMessage),
+                  ],
                 ],
-                const SizedBox(height: 14),
-                _AuthStatus(state: state),
-                const SizedBox(height: 14),
-                const ConnectionPanel(),
-              ],
+              ),
             ),
           ),
         );
@@ -122,108 +143,203 @@ class _AuthHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, title, body) = switch (state.view) {
-      AuthView.signUp => (
-        Icons.person_add_alt_1,
-        'Create your account',
-        'Set up your Baigalaa profile, then verify your email with OTP.',
+    final brandChip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AuthTheme.primary.withValues(alpha: 0.35)),
+        color: AuthTheme.primary.withValues(alpha: 0.06),
       ),
-      AuthView.profile => (
-        Icons.verified_user,
-        'Profile ready',
-        'Your account is verified. Continue into the assistant.',
+      child: const Text(
+        'Baigalaa',
+        style: TextStyle(
+          color: AuthTheme.primary,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
       ),
-      AuthView.login => (
-        Icons.lock_open,
-        'Sign in to Baigalaa',
-        'Use your email and one-time code to continue securely.',
-      ),
+    );
+
+    final headline = switch (state.view) {
+      AuthView.signUp => 'Бүртгэл үүсгэх',
+      AuthView.profile => 'Миний бүртгэл',
+      AuthView.login => 'Нэвтрэх',
     };
+
+    if (state.view == AuthView.profile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          brandChip,
+          const SizedBox(height: 14),
+          Text(
+            headline,
+            style: const TextStyle(
+              color: AuthTheme.onSurface,
+              fontSize: 30,
+              height: 1.08,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 22),
+          Center(child: _profileOrb()),
+        ],
+      );
+    }
+
+    final graphic = _glowingLottie(context, switch (state.view) {
+      AuthView.signUp => Icons.person_add_alt_1,
+      _ => Icons.graphic_eq,
+    });
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        EntryLogoMark(icon: icon),
+        SizedBox(
+          width: double.infinity,
+          child: Center(child: graphic),
+        ),
         const SizedBox(height: 22),
         Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 31,
-            height: 1.08,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          body,
-          style: const TextStyle(
-            color: Color(0xFFD7DEFF),
-            fontSize: 15,
-            height: 1.4,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthTabs extends StatelessWidget {
-  const _AuthTabs({required this.state, required this.onChanged});
-
-  final AuthState state;
-  final ValueChanged<AuthView> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<AuthView>(
-      style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return Colors.white;
-          }
-          return Colors.white.withValues(alpha: 0.12);
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return const Color(0xFF20255A);
-          }
-          return Colors.white;
-        }),
-      ),
-      segments: const [
-        ButtonSegment(value: AuthView.login, label: Text('Login')),
-        ButtonSegment(value: AuthView.signUp, label: Text('Sign up')),
-      ],
-      selected: {
-        state.view == AuthView.signUp ? AuthView.signUp : AuthView.login,
-      },
-      onSelectionChanged: (values) => onChanged(values.first),
-    );
-  }
-}
-
-class _AuthStatus extends StatelessWidget {
-  const _AuthStatus({required this.state});
-
-  final AuthState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final isError = state.errorMessage.isNotEmpty;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Text(
-          isError ? state.errorMessage : state.message,
+          headline,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            color: isError ? const Color(0xFFFFCDD2) : const Color(0xFFE5EAFF),
+            color: AuthTheme.onSurface,
+            fontSize: state.view == AuthView.signUp ? 20 : 28,
+            height: 1.05,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.2,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _profileOrb() {
+    return SizedBox(
+      height: 132,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 112,
+            height: 112,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AuthTheme.primaryContainer.withValues(alpha: 0.12),
+              boxShadow: [
+                BoxShadow(
+                  color: AuthTheme.primaryContainer.withValues(alpha: 0.22),
+                  blurRadius: 36,
+                  spreadRadius: -6,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 76,
+            height: 76,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AuthTheme.primaryContainer,
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              size: 42,
+              color: AuthTheme.onPrimaryContainer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _glowingLottie(BuildContext context, IconData icon) {
+    return SizedBox(
+      height: 220,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 210,
+            height: 210,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AuthTheme.primaryContainer.withValues(alpha: 0.38),
+                  AuthTheme.primaryContainer.withValues(alpha: 0),
+                ],
+                stops: const [0.15, 0.92],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AuthTheme.primaryContainer.withValues(alpha: 0.28),
+                  blurRadius: 40,
+                  spreadRadius: -8,
+                ),
+              ],
+            ),
+          ),
+          AuthHeroLottie(
+            fallback: EntryLogoMark(icon: icon),
+            size: 196,
+            asset: authHeroLottieAsset,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthErrorBanner extends StatelessWidget {
+  const _AuthErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: AuthTheme.statusSurface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: AuthTheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AuthTheme.error,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AuthTheme.onErrorContainer,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

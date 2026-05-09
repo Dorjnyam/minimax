@@ -10,35 +10,16 @@ class AuthGateCubit extends Cubit<AuthGateState> {
   AuthGateCubit({
     required AuthRepository repository,
     required AuthStorage storage,
-    Duration splashDuration = const Duration(milliseconds: 900),
   }) : _repository = repository,
        _storage = storage,
-       _splashDuration = splashDuration,
        super(const AuthGateState());
 
   final AuthRepository _repository;
   final AuthStorage _storage;
-  final Duration _splashDuration;
 
+  /// Opens auth immediately (no splash / onboarding). Valid session → app shell.
   Future<void> start() async {
     emit(const AuthGateState());
-    if (_splashDuration > Duration.zero) {
-      await Future<void>.delayed(_splashDuration);
-    }
-    if (isClosed) {
-      return;
-    }
-    final onboarded =
-        await _storage.read(authOnboardingCompletedStorageKey) == 'true';
-    if (!onboarded) {
-      emit(
-        const AuthGateState(
-          stage: AuthGateStage.onboarding,
-          message: 'Onboarding required.',
-        ),
-      );
-      return;
-    }
     await _restoreSession();
   }
 

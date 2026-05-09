@@ -1,30 +1,71 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-class AuthSplashPage extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+
+import '../../../shared/constants/baigalaa_constants.dart';
+import 'auth_theme.dart';
+import 'widgets/auth_hero_lottie.dart';
+
+class AuthSplashPage extends StatefulWidget {
   const AuthSplashPage({super.key});
 
   @override
+  State<AuthSplashPage> createState() => _AuthSplashPageState();
+}
+
+class _AuthSplashPageState extends State<AuthSplashPage> {
+  var _warming = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_warming) {
+      _warming = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(_preloadHeroLottie());
+      });
+    }
+  }
+
+  /// Warms asset cache early so splash hero does not blink when other startup
+  /// I/O walks `assets/wake_words/` (e.g. Porcupine .ppn).
+  Future<void> _preloadHeroLottie() async {
+    try {
+      await AssetLottie(orbLottieAsset).load(context: context);
+    } catch (_) {
+      /* [AuthHeroLottie] fallback still applies */
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: _EntryGradient(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _LogoMark(icon: Icons.graphic_eq),
-            SizedBox(height: 24),
-            Text(
+            AuthHeroLottie(fallback: EntryLogoMark(icon: Icons.graphic_eq)),
+            const SizedBox(height: 24),
+            const Text(
               'Baigalaa',
               style: TextStyle(
-                color: Colors.white,
+                color: AuthTheme.primary,
                 fontSize: 34,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
               ),
             ),
-            SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 8),
+            const Text(
               'Voice assistant for everyday actions',
-              style: TextStyle(color: Color(0xFFC8D7FF), fontSize: 15),
+              style: TextStyle(
+                color: AuthTheme.onSurfaceVariant,
+                fontSize: 15,
+              ),
             ),
           ],
         ),
@@ -65,13 +106,7 @@ class _EntryGradient extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF111A2E), Color(0xFF20255A), Color(0xFF5639A6)],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: AuthTheme.backgroundGradient),
       child: SafeArea(
         child: Padding(padding: const EdgeInsets.all(24), child: child),
       ),

@@ -4,8 +4,8 @@ enum AuthGateStage { splash, onboarding, auth, app }
 
 class AuthGateState extends Equatable {
   const AuthGateState({
-    this.stage = AuthGateStage.splash,
-    this.message = 'Starting Baigalaa...',
+    this.stage = AuthGateStage.auth,
+    this.message = 'Please log in.',
   });
 
   final AuthGateStage stage;

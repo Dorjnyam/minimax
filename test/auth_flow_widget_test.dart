@@ -46,24 +46,18 @@ void main() {
     );
     await tester.pump();
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Email'),
-      'themargad@gmail.com',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'One-time code'),
-      '111111',
-    );
-    await tester.tap(find.text('Verify OTP'));
+    await tester.enterText(find.byType(TextFormField).first, 'themargad@gmail.com');
+    await tester.enterText(find.byType(TextFormField).at(1), '111111');
+    await tester.tap(find.text('НЭВТРЭХ'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Profile ready'), findsOneWidget);
+    expect(find.text('Профайл бэлэн'), findsOneWidget);
     expect(find.text('themargad@gmail.com'), findsOneWidget);
-    expect(find.text('Enter App'), findsOneWidget);
+    expect(find.text('АПП НЭЭХ'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Enter App'));
-    await tester.tap(find.text('Enter App'));
+    await tester.ensureVisible(find.text('АПП НЭЭХ'));
+    await tester.tap(find.text('АПП НЭЭХ'));
     expect(entered, isTrue);
   });
 }

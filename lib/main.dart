@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
@@ -6,7 +7,9 @@ import 'features/overlay/presentation/baigalaa_overlay_app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  FlutterForegroundTask.initCommunicationPort();
+  if (!kIsWeb) {
+    FlutterForegroundTask.initCommunicationPort();
+  }
   runApp(const BaigalaaApp());
 }
 

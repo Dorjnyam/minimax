@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_splash_page.dart';
+import 'auth_theme.dart';
 
 class AuthOnboardingPage extends StatelessWidget {
   const AuthOnboardingPage({super.key, required this.onGetStarted});
@@ -23,7 +24,7 @@ class AuthOnboardingPage extends StatelessWidget {
             const Text(
               'Talk to Baigalaa',
               style: TextStyle(
-                color: Colors.white,
+                color: AuthTheme.onSurface,
                 fontSize: 32,
                 height: 1.08,
                 fontWeight: FontWeight.w800,
@@ -34,7 +35,7 @@ class AuthOnboardingPage extends StatelessWidget {
             const Text(
               'Sign in once, then use voice, maps, transit, and assistant tools from one place.',
               style: TextStyle(
-                color: Color(0xFFD7DEFF),
+                color: AuthTheme.onSurfaceVariant,
                 fontSize: 16,
                 height: 1.45,
               ),
@@ -46,8 +47,8 @@ class AuthOnboardingPage extends StatelessWidget {
               label: const Text('Get Started'),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(54),
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF20255A),
+                backgroundColor: AuthTheme.primary,
+                foregroundColor: AuthTheme.onPrimary,
               ),
             ),
           ],

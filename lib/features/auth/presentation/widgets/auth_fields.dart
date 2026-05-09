@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../auth_theme.dart';
+
 class AuthTextField extends StatelessWidget {
   const AuthTextField({
     super.key,
     required this.controller,
     required this.label,
     this.icon,
+    this.darkNeon = false,
     this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
@@ -16,16 +19,57 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final IconData? icon;
+
+  /// When true, use light auth chrome (lavender fields on pale background).
+  final bool darkNeon;
   final bool obscureText;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
   final FormFieldValidator<String>? validator;
 
+  static const Color _focusRing = AuthTheme.primaryContainer;
+
+  InputDecoration _authFieldDecoration() {
+    return InputDecoration(
+      filled: true,
+      fillColor: AuthTheme.fieldFill,
+      labelText: label,
+      labelStyle: const TextStyle(
+        color: AuthTheme.primary,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.1,
+      ),
+      floatingLabelBehavior: FloatingLabelBehavior.always,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _focusRing.withValues(alpha: 0.55)),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AuthTheme.error.withValues(alpha: 0.65)),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AuthTheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
@@ -33,10 +77,16 @@ class AuthTextField extends StatelessWidget {
         textInputAction: textInputAction,
         autofillHints: autofillHints,
         validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: icon == null ? null : Icon(icon),
-        ),
+        style: darkNeon
+            ? const TextStyle(color: AuthTheme.onSurface, fontWeight: FontWeight.w500)
+            : null,
+        cursorColor: darkNeon ? AuthTheme.primary : null,
+        decoration: darkNeon
+            ? _authFieldDecoration()
+            : InputDecoration(
+                labelText: label,
+                prefixIcon: icon == null ? null : Icon(icon),
+              ),
       ),
     );
   }
@@ -75,30 +125,174 @@ class AuthActionButton extends StatelessWidget {
 }
 
 class AuthPanel extends StatelessWidget {
-  const AuthPanel({super.key, required this.title, required this.children});
+  const AuthPanel({
+    super.key,
+    required this.title,
+    required this.children,
+    this.darkNeon = false,
+  });
 
   final String title;
   final List<Widget> children;
 
+  /// When true, use elevated light card (matches Stitch auth card).
+  final bool darkNeon;
+
   @override
   Widget build(BuildContext context) {
+    if (darkNeon) {
+      return Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AuthTheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AuthTheme.outlineVariant.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (title.isNotEmpty) ...[
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AuthTheme.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+            ...children,
+          ],
+        ),
+      );
+    }
     return Card(
-      color: Colors.white.withValues(alpha: 0.97),
+      color: AuthTheme.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AuthTheme.outlineVariant.withValues(alpha: 0.35)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 14),
+            if (title.isNotEmpty) ...[
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AuthTheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 14),
+            ],
             ...children,
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Primary / outlined actions for light auth flows.
+class NeonAuthBarButton extends StatelessWidget {
+  const NeonAuthBarButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isBusy = false,
+    this.secondary = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isBusy;
+
+  /// Lighter bordered style for secondary actions (e.g. send OTP).
+  final bool secondary;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryChild = isBusy
+        ? const SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.2,
+              color: AuthTheme.onPrimary,
+            ),
+          )
+        : Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              letterSpacing: 0.02,
+            ),
+          );
+
+    final secondaryChild = isBusy
+        ? const SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.2,
+              color: AuthTheme.primary,
+            ),
+          )
+        : Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              letterSpacing: 0.02,
+            ),
+          );
+
+    if (secondary) {
+      return SizedBox(
+        height: 48,
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: isBusy ? null : onPressed,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AuthTheme.primary,
+            side: const BorderSide(color: AuthTheme.primary, width: 2),
+            backgroundColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          child: secondaryChild,
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: isBusy ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: AuthTheme.primary,
+          foregroundColor: AuthTheme.onPrimary,
+          disabledForegroundColor: AuthTheme.onPrimary.withValues(alpha: 0.65),
+          disabledBackgroundColor: AuthTheme.primary.withValues(alpha: 0.38),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        child: primaryChild,
       ),
     );
   }
