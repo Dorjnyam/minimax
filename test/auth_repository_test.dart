@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:minimax/features/api_console/data/hackathon_api_client.dart';
 import 'package:minimax/features/auth/data/auth_repository.dart';
 import 'package:minimax/features/auth/domain/auth_models.dart';
+import 'package:minimax/shared/constants/baigalaa_constants.dart';
 
 void main() {
   test('sign up sends expected endpoint and body', () async {
@@ -19,7 +20,7 @@ void main() {
     );
 
     await repo.signUp(
-      baseUrl: 'http://192.168.0.153:8000',
+      baseUrl: defaultApiBaseUrl,
       email: 'themargad@gmail.com',
       fullName: 'Маргад-Эрдэнэ',
       phone: '80197747',

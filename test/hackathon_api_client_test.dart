@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:minimax/features/api_console/data/hackathon_api_client.dart';
+import 'package:minimax/shared/constants/baigalaa_constants.dart';
 
 void main() {
   test('client builds collection endpoint requests with bearer auth', () async {
@@ -17,17 +18,14 @@ void main() {
     );
 
     final result = await client.request(
-      baseUrl: 'http://192.168.0.153:8000',
+      baseUrl: defaultApiBaseUrl,
       method: 'POST',
       path: '/api/v1/agents/abc/run',
       token: 'token-1',
       body: {'input': 'hello'},
     );
 
-    expect(
-      capturedUri.toString(),
-      'http://192.168.0.153:8000/api/v1/agents/abc/run',
-    );
+    expect(capturedUri.toString(), '$defaultApiBaseUrl/api/v1/agents/abc/run');
     expect(capturedHeaders['Authorization'], 'Bearer token-1');
     expect(capturedBody.toString(), contains('"input":"hello"'));
     expect(result.isSuccess, isTrue);

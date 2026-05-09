@@ -2,50 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../shared/constants/baigalaa_constants.dart';
 import '../../bloc/auth_cubit.dart';
 import '../../domain/auth_models.dart';
 import 'auth_fields.dart';
 
 class ConnectionPanel extends StatelessWidget {
-  const ConnectionPanel({
-    super.key,
-    required this.baseUrl,
-    required this.isBusy,
-    required this.onSave,
-  });
-
-  final TextEditingController baseUrl;
-  final bool isBusy;
-  final VoidCallback onSave;
+  const ConnectionPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white.withValues(alpha: 0.94),
-      child: ExpansionTile(
-        leading: const Icon(Icons.tune),
-        title: const Text('Backend address'),
-        subtitle: const Text('http://192.168.0.153:8000'),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        children: [
-          AuthTextField(
-            controller: baseUrl,
-            label: 'Base URL',
-            icon: Icons.link,
-            keyboardType: TextInputType.url,
-          ),
-          Text(
-            'Use the LAN IP of the computer running the backend.',
-            style: TextStyle(color: Colors.black.withValues(alpha: 0.55)),
-          ),
-          const SizedBox(height: 10),
-          AuthActionButton(
-            label: 'Save URL',
-            icon: Icons.save,
-            isBusy: isBusy,
-            onPressed: onSave,
-          ),
-        ],
+      child: const ListTile(
+        leading: Icon(Icons.tune),
+        title: Text('Backend address'),
+        subtitle: Text(defaultApiBaseUrl),
       ),
     );
   }
@@ -55,7 +27,6 @@ class SignUpSection extends StatefulWidget {
   const SignUpSection({
     super.key,
     required this.cubit,
-    required this.baseUrl,
     required this.email,
     required this.fullName,
     required this.phone,
@@ -63,7 +34,6 @@ class SignUpSection extends StatefulWidget {
   });
 
   final AuthCubit cubit;
-  final TextEditingController baseUrl;
   final TextEditingController email;
   final TextEditingController fullName;
   final TextEditingController phone;
@@ -82,7 +52,7 @@ class _SignUpSectionState extends State<SignUpSection> {
     }
     unawaited(
       widget.cubit.signUp(
-        baseUrl: widget.baseUrl.text,
+        baseUrl: defaultApiBaseUrl,
         email: widget.email.text.trim(),
         fullName: widget.fullName.text.trim(),
         phone: widget.phone.text.trim(),
@@ -150,14 +120,12 @@ class LoginSection extends StatefulWidget {
   const LoginSection({
     super.key,
     required this.cubit,
-    required this.baseUrl,
     required this.email,
     required this.otp,
     required this.isBusy,
   });
 
   final AuthCubit cubit;
-  final TextEditingController baseUrl;
   final TextEditingController email;
   final TextEditingController otp;
   final bool isBusy;
@@ -177,7 +145,7 @@ class _LoginSectionState extends State<LoginSection> {
     }
     unawaited(
       widget.cubit.sendOtp(
-        baseUrl: widget.baseUrl.text,
+        baseUrl: defaultApiBaseUrl,
         email: widget.email.text.trim(),
       ),
     );
@@ -190,7 +158,7 @@ class _LoginSectionState extends State<LoginSection> {
     }
     unawaited(
       widget.cubit.verifyOtp(
-        baseUrl: widget.baseUrl.text,
+        baseUrl: defaultApiBaseUrl,
         email: widget.email.text.trim(),
         otp: widget.otp.text.trim(),
       ),
@@ -254,7 +222,6 @@ class ProfileSection extends StatelessWidget {
   const ProfileSection({
     super.key,
     required this.cubit,
-    required this.baseUrl,
     required this.user,
     required this.hasToken,
     required this.isBusy,
@@ -263,7 +230,6 @@ class ProfileSection extends StatelessWidget {
   });
 
   final AuthCubit cubit;
-  final TextEditingController baseUrl;
   final AuthUser user;
   final bool hasToken;
   final bool isBusy;
@@ -284,7 +250,8 @@ class ProfileSection extends StatelessWidget {
           icon: Icons.account_circle,
           isBusy: isBusy,
           enabled: hasToken,
-          onPressed: () => unawaited(cubit.loadProfile(baseUrl: baseUrl.text)),
+          onPressed: () =>
+              unawaited(cubit.loadProfile(baseUrl: defaultApiBaseUrl)),
         ),
         const SizedBox(height: 8),
         FilledButton.icon(

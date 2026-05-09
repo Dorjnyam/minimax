@@ -46,7 +46,7 @@ void main() {
     );
 
     await cubit.verifyOtp(
-      baseUrl: 'http://192.168.0.153:8000',
+      baseUrl: defaultApiBaseUrl,
       email: 'themargad@gmail.com',
       otp: '111111',
     );
@@ -69,7 +69,7 @@ void main() {
     );
 
     await cubit.sendOtp(
-      baseUrl: 'http://192.168.0.153:8000',
+      baseUrl: defaultApiBaseUrl,
       email: 'themargad@gmail.com',
     );
 

@@ -65,7 +65,7 @@ class AuthGateCubit extends Cubit<AuthGateState> {
   }
 
   Future<void> _restoreSession() async {
-    final baseUrl = _validBaseUrl(await _storage.read(apiBaseUrlStorageKey));
+    final baseUrl = defaultApiBaseUrl;
     final access = await _storage.read(apiAccessTokenStorageKey) ?? '';
     final refresh = await _storage.read(apiRefreshTokenStorageKey) ?? '';
 
@@ -143,15 +143,5 @@ class AuthGateCubit extends Cubit<AuthGateState> {
     await _storage.delete(authProfileEmailStorageKey);
     await _storage.delete(authProfileFullNameStorageKey);
     await _storage.delete(authProfilePhoneStorageKey);
-  }
-
-  String _validBaseUrl(String? value) {
-    final clean = value?.trim() ?? '';
-    if (clean.isEmpty ||
-        clean == 'http://localhost:8000' ||
-        clean == 'http://192.168.0.153/:8000') {
-      return defaultApiBaseUrl;
-    }
-    return clean;
   }
 }

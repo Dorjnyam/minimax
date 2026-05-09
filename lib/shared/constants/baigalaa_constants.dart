@@ -1,6 +1,6 @@
 const accessKeyStorageKey = 'picovoice_access_key';
 const routesApiKeyStorageKey = 'google_routes_api_key';
-const defaultApiBaseUrl = 'http://192.168.0.153:8000';
+const defaultApiBaseUrl = 'http://192.168.0.153:8778';
 const apiBaseUrlStorageKey = 'hackathon_api_base_url';
 const apiAccessTokenStorageKey = 'hackathon_api_access_token';
 const apiRefreshTokenStorageKey = 'hackathon_api_refresh_token';

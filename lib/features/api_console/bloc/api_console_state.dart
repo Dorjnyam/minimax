@@ -1,11 +1,13 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../shared/constants/baigalaa_constants.dart';
+
 enum ApiConsoleStatus { initial, loading, success, failure }
 
 class ApiConsoleState extends Equatable {
   const ApiConsoleState({
     this.status = ApiConsoleStatus.initial,
-    this.baseUrl = 'http://192.168.0.153:8000',
+    this.baseUrl = defaultApiBaseUrl,
     this.accessToken = '',
     this.refreshToken = '',
     this.agentId = '',

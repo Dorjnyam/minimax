@@ -40,18 +40,11 @@ class ApiConsoleCubit extends Cubit<ApiConsoleState> {
     );
   }
 
-  String _storedBaseUrl(String? value) {
-    if (value == null ||
-        value.isEmpty ||
-        value == 'http://192.168.0.153:8000') {
-      return state.baseUrl;
-    }
-    return value;
-  }
+  String _storedBaseUrl(String? _) => defaultApiBaseUrl;
 
-  Future<void> saveBaseUrl(String baseUrl) async {
-    await _write(apiBaseUrlStorageKey, baseUrl.trim());
-    emit(state.copyWith(baseUrl: baseUrl.trim()));
+  Future<void> saveBaseUrl(String _) async {
+    await _write(apiBaseUrlStorageKey, defaultApiBaseUrl);
+    emit(state.copyWith(baseUrl: defaultApiBaseUrl));
   }
 
   Future<void> health(String baseUrl) {
@@ -246,7 +239,7 @@ class ApiConsoleCubit extends Cubit<ApiConsoleState> {
     required Future<ApiCallResult> Function(String baseUrl) action,
     Future<void> Function(ApiCallResult result)? onSuccess,
   }) async {
-    final cleanBase = baseUrl.trim();
+    final cleanBase = defaultApiBaseUrl;
     await saveBaseUrl(cleanBase);
     emit(
       state.copyWith(

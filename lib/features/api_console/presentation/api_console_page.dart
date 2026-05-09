@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/constants/baigalaa_constants.dart';
 import '../bloc/api_console_cubit.dart';
 import '../bloc/api_console_state.dart';
 import 'widgets/api_console_widgets.dart';
@@ -15,7 +16,7 @@ class ApiConsolePage extends StatefulWidget {
 }
 
 class _ApiConsolePageState extends State<ApiConsolePage> {
-  final _baseUrl = TextEditingController(text: 'http://192.168.0.153:8000');
+  final _baseUrl = TextEditingController(text: defaultApiBaseUrl);
   final _email = TextEditingController(text: 'test@test.com');
   final _fullName = TextEditingController(text: 'Test User');
   final _phone = TextEditingController(text: '99001122');
@@ -117,20 +118,15 @@ class _ApiConsolePageState extends State<ApiConsolePage> {
     return ApiSection(
       title: 'Connection',
       children: [
-        ApiTextField(controller: _baseUrl, label: 'Base URL', icon: Icons.link),
+        const SelectableText(defaultApiBaseUrl),
         Text(
-          'For a real phone, 192.168.0.153 must be your computer LAN IP.',
+          'Backend URL is configured in baigalaa_constants.dart.',
           style: TextStyle(color: Colors.black.withValues(alpha: 0.55)),
         ),
         const SizedBox(height: 10),
         ApiButtonGrid(
           isBusy: state.isBusy,
           buttons: [
-            ApiActionButton(
-              label: 'Save',
-              icon: Icons.save,
-              onPressed: () => unawaited(_cubit.saveBaseUrl(_baseUrl.text)),
-            ),
             ApiActionButton(
               label: 'Health',
               icon: Icons.health_and_safety,

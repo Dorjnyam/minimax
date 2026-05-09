@@ -47,10 +47,9 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(view: view, clearError: true));
   }
 
-  Future<void> saveBaseUrl(String baseUrl) async {
-    final clean = baseUrl.trim();
-    await _storage.write(apiBaseUrlStorageKey, clean);
-    emit(state.copyWith(baseUrl: clean));
+  Future<void> saveBaseUrl(String _) async {
+    await _storage.write(apiBaseUrlStorageKey, defaultApiBaseUrl);
+    emit(state.copyWith(baseUrl: defaultApiBaseUrl));
   }
 
   Future<void> signUp({
@@ -60,9 +59,10 @@ class AuthCubit extends Cubit<AuthState> {
     required String phone,
   }) async {
     await _run('Signing up...', () async {
-      await saveBaseUrl(baseUrl);
+      final url = _validBaseUrl(baseUrl);
+      await saveBaseUrl(url);
       final user = await _repository.signUp(
-        baseUrl: baseUrl,
+        baseUrl: url,
         email: email,
         fullName: fullName,
         phone: phone,
@@ -86,8 +86,9 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> sendOtp({required String baseUrl, required String email}) async {
     await _run('Sending OTP...', () async {
-      await saveBaseUrl(baseUrl);
-      await _repository.sendOtp(baseUrl: baseUrl, email: email);
+      final url = _validBaseUrl(baseUrl);
+      await saveBaseUrl(url);
+      await _repository.sendOtp(baseUrl: url, email: email);
       await _storage.write(authLastEmailStorageKey, email);
       emit(
         state.copyWith(
@@ -107,9 +108,10 @@ class AuthCubit extends Cubit<AuthState> {
     required String otp,
   }) async {
     await _run('Verifying OTP...', () async {
-      await saveBaseUrl(baseUrl);
+      final url = _validBaseUrl(baseUrl);
+      await saveBaseUrl(url);
       final session = await _repository.verifyOtp(
-        baseUrl: baseUrl,
+        baseUrl: url,
         email: email,
         otp: otp,
       );
@@ -125,7 +127,7 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
       final user = await _repository.me(
-        baseUrl: baseUrl,
+        baseUrl: url,
         accessToken: session.accessToken,
       );
       await _saveUser(user);
@@ -143,9 +145,10 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> refresh({required String baseUrl}) async {
     await _run('Refreshing token...', () async {
-      await saveBaseUrl(baseUrl);
+      final url = _validBaseUrl(baseUrl);
+      await saveBaseUrl(url);
       final session = await _repository.refresh(
-        baseUrl: baseUrl,
+        baseUrl: url,
         refreshToken: state.session.refreshToken,
       );
       final merged = AuthSession(
@@ -169,7 +172,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> loadProfile({String? baseUrl, String? accessToken}) async {
-    final url = baseUrl ?? state.baseUrl;
+    final url = _validBaseUrl(baseUrl ?? state.baseUrl);
     final token = accessToken ?? state.session.accessToken;
     await _run('Loading profile...', () async {
       final user = await _repository.me(baseUrl: url, accessToken: token);
@@ -240,14 +243,5 @@ class AuthCubit extends Cubit<AuthState> {
     await _storage.delete(authProfilePhoneStorageKey);
   }
 
-  String _validBaseUrl(String? value) {
-    final clean = value?.trim() ?? '';
-    if (clean.isEmpty ||
-        clean == defaultApiBaseUrl ||
-        clean == 'http://localhost:8000' ||
-        clean == 'http://192.168.0.153/:8000') {
-      return state.baseUrl;
-    }
-    return clean;
-  }
+  String _validBaseUrl(String? _) => defaultApiBaseUrl;
 }

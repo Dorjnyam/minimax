@@ -89,8 +89,7 @@ class AssistantChatService {
     if (token == null || token.trim().isEmpty) {
       throw StateError('Please log in again.');
     }
-    final baseUrl = await _authStorage.read(apiBaseUrlStorageKey);
-    return _ChatSession(baseUrl: _validBaseUrl(baseUrl), token: token.trim());
+    return _ChatSession(baseUrl: defaultApiBaseUrl, token: token.trim());
   }
 
   Future<String> _conversationId(
@@ -116,16 +115,6 @@ class AssistantChatService {
           );
     await _authStorage.write(apiConversationIdStorageKey, conversation.id);
     return conversation.id;
-  }
-
-  String _validBaseUrl(String? value) {
-    final clean = value?.trim() ?? '';
-    if (clean.isEmpty ||
-        clean == 'http://localhost:8000' ||
-        clean == 'http://192.168.0.153/:8000') {
-      return defaultApiBaseUrl;
-    }
-    return clean;
   }
 }
 

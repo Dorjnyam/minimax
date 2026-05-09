@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../shared/constants/baigalaa_constants.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import 'auth_splash_page.dart';
@@ -20,7 +19,6 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  final _baseUrl = TextEditingController(text: defaultApiBaseUrl);
   final _email = TextEditingController();
   final _fullName = TextEditingController();
   final _phone = TextEditingController();
@@ -35,7 +33,6 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   void dispose() {
-    _baseUrl.dispose();
     _email.dispose();
     _fullName.dispose();
     _phone.dispose();
@@ -47,7 +44,6 @@ class _AuthPageState extends State<AuthPage> {
     if (_hydrated) {
       return;
     }
-    _set(_baseUrl, state.baseUrl);
     _set(_email, state.email);
     _set(_fullName, state.user.fullName);
     _set(_phone, state.user.phone);
@@ -81,7 +77,6 @@ class _AuthPageState extends State<AuthPage> {
                 if (state.view == AuthView.profile)
                   ProfileSection(
                     cubit: cubit,
-                    baseUrl: _baseUrl,
                     user: state.user,
                     hasToken: state.hasAccessToken,
                     isBusy: state.isBusy,
@@ -94,7 +89,6 @@ class _AuthPageState extends State<AuthPage> {
                   if (state.view == AuthView.signUp)
                     SignUpSection(
                       cubit: cubit,
-                      baseUrl: _baseUrl,
                       email: _email,
                       fullName: _fullName,
                       phone: _phone,
@@ -103,7 +97,6 @@ class _AuthPageState extends State<AuthPage> {
                   else
                     LoginSection(
                       cubit: cubit,
-                      baseUrl: _baseUrl,
                       email: _email,
                       otp: _otp,
                       isBusy: state.isBusy,
@@ -112,11 +105,7 @@ class _AuthPageState extends State<AuthPage> {
                 const SizedBox(height: 14),
                 _AuthStatus(state: state),
                 const SizedBox(height: 14),
-                ConnectionPanel(
-                  baseUrl: _baseUrl,
-                  isBusy: state.isBusy,
-                  onSave: () => unawaited(cubit.saveBaseUrl(_baseUrl.text)),
-                ),
+                const ConnectionPanel(),
               ],
             ),
           ),

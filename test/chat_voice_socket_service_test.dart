@@ -3,12 +3,13 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:minimax/features/chat/data/chat_voice_socket_service.dart';
+import 'package:minimax/shared/constants/baigalaa_constants.dart';
 
 void main() {
   test('socket uri is derived from base url', () {
     expect(
-      ChatVoiceSocketService.socketUri('http://192.168.0.153:8000').toString(),
-      'ws://192.168.0.153:8000/ws/chat',
+      ChatVoiceSocketService.socketUri(defaultApiBaseUrl).toString(),
+      '${defaultApiBaseUrl.replaceFirst('http://', 'ws://')}/ws/chat',
     );
     expect(
       ChatVoiceSocketService.socketUri('https://api.test/base').toString(),
