@@ -85,6 +85,33 @@ class AssistantChatService {
     );
   }
 
+  /// Text chat over the same WebSocket URL as voice; body is `user_message` + GPS.
+  Future<ChatAudioResponse> sendUserText({
+    required AssistantChatContext context,
+    required String content,
+  }) async {
+    final coords = await _locationService.getCurrent();
+    if (kDebugMode) {
+      if (coords != null) {
+        debugPrint(
+          '[Baigalaa VoiceSocket] GPS for user_message: lat=${coords.lat} lng=${coords.lng}',
+        );
+      } else {
+        debugPrint(
+          '[Baigalaa VoiceSocket] GPS for user_message: null '
+          '(denied, services off, timeout, or error — location omitted from payload)',
+        );
+      }
+    }
+    return _voiceSocket.sendUserMessage(
+      baseUrl: context.baseUrl,
+      token: context.token,
+      conversationId: context.conversationId,
+      content: content,
+      location: coords,
+    );
+  }
+
   Future<String> playAudio({
     required AssistantChatContext context,
     required String audioUrl,

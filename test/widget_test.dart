@@ -17,8 +17,6 @@ import 'package:minimax/features/auth/data/session_refresh_service.dart';
 import 'package:minimax/shared/services/maps_launcher_service.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
 
-Future<void> _noopLogout() async {}
-
 void main() {
   testWidgets('First launch opens login screen immediately', (tester) async {
     await tester.pumpWidget(BaigalaaApp(authStorage: MemoryAuthStorage()));
@@ -90,7 +88,7 @@ void main() {
       MaterialApp(
         home: BlocProvider.value(
           value: cubit,
-          child: const AssistantPage(onLogout: _noopLogout),
+          child: const AssistantPage(),
         ),
       ),
     );
@@ -113,7 +111,7 @@ void main() {
       MaterialApp(
         home: BlocProvider.value(
           value: cubit,
-          child: const AssistantPage(onLogout: _noopLogout),
+          child: const AssistantPage(),
         ),
       ),
     );
@@ -136,7 +134,7 @@ void main() {
       MaterialApp(
         home: BlocProvider.value(
           value: cubit,
-          child: const AssistantPage(onLogout: _noopLogout),
+          child: const AssistantPage(),
         ),
       ),
     );

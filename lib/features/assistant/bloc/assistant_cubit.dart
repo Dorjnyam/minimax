@@ -159,6 +159,20 @@ class AssistantCubit extends Cubit<AssistantState> {
     return _handleRecognizedText(text);
   }
 
+  /// Typed message from the home composer: same socket as voice, `user_message` JSON body.
+  Future<void> sendUserTypedMessage(String rawText) async {
+    final text = rawText.trim();
+    if (text.isEmpty) return;
+
+    final command = _parser.parse(text);
+    if (command != null) {
+      await _launchMapCommand(command);
+      return;
+    }
+
+    await _respondWithChatText(text);
+  }
+
   Future<void> _handleRecognizedText(String rawText) async {
     if (_responding) return;
     _responding = true;
@@ -332,6 +346,81 @@ class AssistantCubit extends Cubit<AssistantState> {
           errorMessage: '$error',
         ),
       );
+    }
+  }
+
+  Future<void> _respondWithChatText(String text) async {
+    if (_responding) return;
+    _responding = true;
+    try {
+      final context = await _chatService.prepare(state.conversationId);
+      final userMessage = ChatMessage.local(
+        conversationId: context.conversationId,
+        role: 'user',
+        content: text,
+      );
+      emit(
+        state.copyWith(
+          status: AssistantStatus.uploading,
+          conversationId: context.conversationId,
+          messages: [...state.messages, userMessage],
+          transcript: text,
+          response: 'Sending…',
+          clearError: true,
+        ),
+      );
+
+      final reply = await _chatService.sendUserText(
+        context: context,
+        content: text,
+      );
+      var localAudioPath = '';
+      if (reply.hasAudio) {
+        emit(state.copyWith(status: AssistantStatus.playing));
+        try {
+          localAudioPath = reply.audioUrl.isNotEmpty
+              ? await _chatService.playAudio(
+                  context: context,
+                  audioUrl: reply.audioUrl,
+                )
+              : await _chatService.playAudioResponse(reply);
+        } catch (error) {
+          emit(state.copyWith(errorMessage: 'Audio playback failed: $error'));
+        }
+      }
+
+      final assistantText =
+          reply.text.isEmpty ? 'Received.' : reply.text;
+      final assistantMessage = ChatMessage.local(
+        conversationId: context.conversationId,
+        role: 'assistant',
+        content: assistantText,
+      );
+      final freshMessages = await _chatService.safeMessages(context);
+      emit(
+        state.copyWith(
+          status: AssistantStatus.idle,
+          response: assistantText,
+          messages: freshMessages.isEmpty
+              ? [...state.messages, assistantMessage]
+              : freshMessages,
+          replyAudioPath: localAudioPath,
+          clearError: localAudioPath.isNotEmpty,
+        ),
+      );
+    } catch (error) {
+      final missingToken = error is StateError;
+      emit(
+        state.copyWith(
+          status: AssistantStatus.error,
+          response: missingToken
+              ? 'Please log in again.'
+              : 'Could not send message.',
+          errorMessage: '$error',
+        ),
+      );
+    } finally {
+      _responding = false;
     }
   }
 

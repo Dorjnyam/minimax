@@ -55,22 +55,56 @@ void main() {
     await cubit.close();
   });
 
-  test('missing token surfaces login error for recorded audio', () async {
+  test('empty access token uses hackathon fallback for voice chat', () async {
+    final file = File('${Directory.systemTemp.path}/baigalaa_cubit_fallback.m4a');
+    await file.writeAsBytes([1]);
+    addTearDown(() {
+      if (file.existsSync()) file.deleteSync();
+    });
+
+    final socket = _FakeVoiceSocket();
     final cubit = AssistantCubit(
       repository: const MockAssistantRepository(),
       mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
       accessTokenProvider: const FixedAccessTokenProvider(''),
-      authStorage: MemoryAuthStorage(),
+      authStorage: MemoryAuthStorage({
+        apiConversationIdStorageKey: 'c1',
+      }),
       chatRepository: _FakeChatRepository(),
-      chatVoiceSocket: _FakeVoiceSocket(),
+      chatVoiceSocket: socket,
       chatAudioPlayback: _FakePlayback(),
       userLocationService: UserLocationService(override: () async => null),
     );
 
-    await cubit.submitText('hello', recordingPath: 'missing.m4a');
+    await cubit.submitText('hello', recordingPath: file.path);
 
-    expect(cubit.state.status, AssistantStatus.error);
-    expect(cubit.state.response, 'Please log in again.');
+    expect(cubit.state.status, AssistantStatus.idle);
+    expect(socket.audioPath, file.path);
+    await cubit.close();
+  });
+
+  test('typed composer message sends user_message via socket', () async {
+    final socket = _FakeVoiceSocket();
+    final cubit = AssistantCubit(
+      repository: const MockAssistantRepository(),
+      mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
+      accessTokenProvider: const FixedAccessTokenProvider('token'),
+      authStorage: MemoryAuthStorage({
+        apiConversationIdStorageKey: 'c1',
+      }),
+      chatRepository: _FakeChatRepository(),
+      chatVoiceSocket: socket,
+      chatAudioPlayback: _FakePlayback(),
+      userLocationService: UserLocationService(
+        override: () async => (lat: 47.9188, lng: 106.9175),
+      ),
+    );
+
+    await cubit.sendUserTypedMessage('hello typed');
+
+    expect(socket.userMessageContent, 'hello typed');
+    expect(cubit.state.status, AssistantStatus.idle);
+    expect(cubit.state.response, 'typed assistant reply');
     await cubit.close();
   });
 }
@@ -112,6 +146,7 @@ class _FakeChatRepository implements ChatRepository {
 class _FakeVoiceSocket implements ChatVoiceSocketService {
   String? conversationId;
   String? audioPath;
+  String? userMessageContent;
 
   @override
   Future<ChatAudioResponse> sendAudio({
@@ -127,6 +162,18 @@ class _FakeVoiceSocket implements ChatVoiceSocketService {
       text: 'assistant reply',
       audioUrl: 'http://api.test/reply.mp3',
     );
+  }
+
+  @override
+  Future<ChatAudioResponse> sendUserMessage({
+    required String baseUrl,
+    required String token,
+    required String conversationId,
+    required String content,
+    ({double lat, double lng})? location,
+  }) async {
+    userMessageContent = content;
+    return const ChatAudioResponse(text: 'typed assistant reply', audioUrl: '');
   }
 }
 

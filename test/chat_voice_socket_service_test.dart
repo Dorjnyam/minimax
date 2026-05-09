@@ -59,7 +59,7 @@ void main() {
     Map<String, String>? capturedHeaders;
 
     final service = ChatVoiceSocketService(
-      exchange: (uri, headers, payload) async {
+      exchange: (uri, headers, payload, _) async {
         capturedUri = uri;
         capturedHeaders = headers;
         expect(payload['type'], 'user_audio');
@@ -84,6 +84,35 @@ void main() {
     expect(response.text, 'reply');
     expect(response.audioUrl, '/reply.mp3');
   });
+  test('user_message payload matches backend body', () {
+    expect(
+      ChatVoiceSocketService.buildUserMessagePayload(
+        content: 'Хэрхэн талбай руу очих вэ',
+        location: (lat: 47.9188, lng: 106.9175),
+        tts: false,
+      ),
+      {
+        'type': 'user_message',
+        'content': 'Хэрхэн талбай руу очих вэ',
+        'tts': false,
+        'location': {'lat': 47.9188, 'lng': 106.9175},
+      },
+    );
+  });
+
+  test('isAssistantReplyComplete accepts text-only assistant reply', () {
+    expect(
+      ChatVoiceSocketService.isAssistantReplyComplete({
+        'content': 'Reply text',
+      }),
+      isTrue,
+    );
+    expect(
+      ChatVoiceSocketService.isAssistantReplyComplete({'audio_url': '/a.mp3'}),
+      isTrue,
+    );
+  });
+
   test('isVoiceResponseComplete skips text until audio', () {
     expect(
       ChatVoiceSocketService.isVoiceResponseComplete({'content': 'typing...'}),
@@ -123,7 +152,7 @@ void main() {
     });
 
     final service = ChatVoiceSocketService(
-      exchange: (_, _, _) async {
+      exchange: (_, _, _, _) async {
         return jsonEncode({
           'type': 'assistant_audio',
           'audio': 'AQID',

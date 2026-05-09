@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../auth/gate/auth_gate_cubit.dart';
 import '../bloc/assistant_cubit.dart';
 import 'widgets/assistant_chips.dart';
 import 'widgets/assistant_controls.dart';
@@ -18,10 +17,7 @@ double _orbSize(BuildContext context) {
 }
 
 class AssistantPage extends StatelessWidget {
-  const AssistantPage({super.key, this.onLogout});
-
-  /// When null (production), calls [AuthGateCubit.signOut]. Tests may pass a noop.
-  final Future<void> Function()? onLogout;
+  const AssistantPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,47 +33,74 @@ class AssistantPage extends StatelessWidget {
           ),
           child: Material(
             color: Colors.transparent,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(22, 8, 22, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _AssistantStatusBar(onLogout: onLogout),
-                    const SizedBox(height: 12),
-                    const Spacer(),
-                    Center(
-                      child: AssistantOrb(
-                        active: state.isListening,
-                        size: _orbSize(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: _InteractiveOrb(
+                                active: state.isListening,
+                                size: _orbSize(context),
+                                onTap: () => unawaited(
+                                  context.read<AssistantCubit>().listen(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AssistantChips(
+                                  onSelected: (suggestion) => unawaited(
+                                    context
+                                        .read<AssistantCubit>()
+                                        .runSuggestion(suggestion),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _AssistantTranscriptPanel(state: state),
+                                const SizedBox(height: 10),
+                                AssistantMessagePreview(state: state),
+                                if (state.errorMessage != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.errorMessage!,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: const Color(0xFFFFB8B8),
+                                        ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    AssistantChips(
-                      onSelected: (suggestion) => unawaited(
-                        context.read<AssistantCubit>().runSuggestion(
-                          suggestion,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    _AssistantTranscriptPanel(state: state),
-                    const SizedBox(height: 10),
-                    AssistantMessagePreview(state: state),
-                    if (state.errorMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        state.errorMessage!,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFFFFB8B8),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    AssistantMicControls(
+                  ),
+                ),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
+                    child: AssistantMicControls(
                       isListening: state.isListening,
                       onMicPressed: () =>
                           unawaited(context.read<AssistantCubit>().listen()),
@@ -85,13 +108,41 @@ class AssistantPage extends StatelessWidget {
                         context.read<AssistantCubit>().submitText(''),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Tap target with ripple; starts listening like the main mic control.
+class _InteractiveOrb extends StatelessWidget {
+  const _InteractiveOrb({
+    required this.active,
+    required this.size,
+    required this.onTap,
+  });
+
+  final bool active;
+  final double size;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      clipBehavior: Clip.none,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        splashColor: Colors.white.withValues(alpha: 0.14),
+        highlightColor: Colors.white.withValues(alpha: 0.06),
+        child: AssistantOrb(active: active, size: size),
+      ),
     );
   }
 }
@@ -111,9 +162,9 @@ class _AssistantTranscriptPanel extends StatelessWidget {
             'You said',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.56),
-              letterSpacing: 0,
-            ),
+                  color: Colors.white.withValues(alpha: 0.56),
+                  letterSpacing: 0,
+                ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -122,11 +173,11 @@ class _AssistantTranscriptPanel extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: const Color(0xFFEDEBFF),
-              height: 1.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0,
-            ),
+                  color: const Color(0xFFEDEBFF),
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
           ),
           const SizedBox(height: 8),
         ],
@@ -136,12 +187,12 @@ class _AssistantTranscriptPanel extends StatelessWidget {
           maxLines: hasTranscript ? 2 : 3,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: hasTranscript
-                ? Colors.white.withValues(alpha: 0.68)
-                : const Color(0xFFEDEBFF),
-            height: 1.5,
-            letterSpacing: 0,
-          ),
+                color: hasTranscript
+                    ? Colors.white.withValues(alpha: 0.68)
+                    : const Color(0xFFEDEBFF),
+                height: 1.5,
+                letterSpacing: 0,
+              ),
         ),
         if (state.recordingPath.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -151,9 +202,9 @@ class _AssistantTranscriptPanel extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.68),
-              letterSpacing: 0,
-            ),
+                  color: Colors.white.withValues(alpha: 0.68),
+                  letterSpacing: 0,
+                ),
           ),
         ],
       ],
@@ -163,50 +214,5 @@ class _AssistantTranscriptPanel extends StatelessWidget {
   String _compactPath(String path) {
     final parts = path.split(RegExp(r'[\\/]'));
     return parts.isEmpty ? path : parts.last;
-  }
-}
-
-class _AssistantStatusBar extends StatelessWidget {
-  const _AssistantStatusBar({this.onLogout});
-
-  final Future<void> Function()? onLogout;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = TimeOfDay.now();
-    final hour = now.hour.toString().padLeft(2, '0');
-    final minute = now.minute.toString().padLeft(2, '0');
-
-    return Row(
-      children: [
-        Text(
-          '$hour:$minute',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const Spacer(),
-        IconButton(
-          tooltip: 'Log out',
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.logout, color: Colors.white, size: 20),
-          onPressed: () {
-            if (onLogout != null) {
-              unawaited(onLogout!());
-              return;
-            }
-            unawaited(context.read<AuthGateCubit>().signOut());
-          },
-        ),
-        Icon(Icons.signal_cellular_4_bar, color: Colors.white, size: 16),
-        const SizedBox(width: 2),
-        Icon(Icons.wifi, color: Colors.white, size: 16),
-        const SizedBox(width: 2),
-        Icon(Icons.battery_full, color: Colors.white, size: 18),
-      ],
-    );
   }
 }

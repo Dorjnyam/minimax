@@ -12,6 +12,7 @@ typedef ChatSocketExchange =
       Uri uri,
       Map<String, String> headers,
       Map<String, Object?> payload,
+      bool Function(Object?) isComplete,
     );
 
 class ChatVoiceSocketService {
@@ -42,7 +43,40 @@ class ChatVoiceSocketService {
     );
     _logOutgoing(uri, payload);
     final headers = <String, String>{};
-    final response = await _exchange(uri, headers, payload).timeout(_timeout);
+    final response = await _exchange(
+      uri,
+      headers,
+      payload,
+      isVoiceResponseComplete,
+    ).timeout(_timeout);
+    return ChatAudioResponse.fromData(_decode(response));
+  }
+
+  /// Same WebSocket URL as [sendAudio]; JSON body uses `user_message` (+ optional GPS).
+  Future<ChatAudioResponse> sendUserMessage({
+    required String baseUrl,
+    required String token,
+    required String conversationId,
+    required String content,
+    ({double lat, double lng})? location,
+  }) async {
+    final uri = socketUri(
+      baseUrl: baseUrl,
+      conversationId: conversationId,
+      token: token,
+    );
+    final payload = buildUserMessagePayload(
+      content: content,
+      location: location,
+    );
+    _logOutgoing(uri, payload);
+    final headers = <String, String>{};
+    final response = await _exchange(
+      uri,
+      headers,
+      payload,
+      isAssistantReplyComplete,
+    ).timeout(_timeout);
     return ChatAudioResponse.fromData(_decode(response));
   }
 
@@ -60,6 +94,24 @@ class ChatVoiceSocketService {
       path: '/ws/chat/${Uri.encodeComponent(conversationId)}/',
       queryParameters: {'token': token},
     );
+  }
+
+  /// Backend `user_message` frame (text chat over the voice socket).
+  static Map<String, Object?> buildUserMessagePayload({
+    required String content,
+    ({double lat, double lng})? location,
+    bool tts = false,
+  }) {
+    return {
+      'type': 'user_message',
+      'content': content,
+      'tts': tts,
+      if (location != null)
+        'location': <String, Object?>{
+          'lat': location.lat,
+          'lng': location.lng,
+        },
+    };
   }
 
   /// Backend `user_audio` frame: audio + [location] + [tts] (same shape as `user_message` extras).
@@ -94,6 +146,16 @@ class ChatVoiceSocketService {
     Uri uri,
     Map<String, String> headers,
     Map<String, Object?> payload,
+    bool Function(Object?) isComplete,
+  ) async {
+    return _socketExchange(uri, headers, payload, isComplete);
+  }
+
+  static Future<Object?> _socketExchange(
+    Uri uri,
+    Map<String, String> headers,
+    Map<String, Object?> payload,
+    bool Function(Object?) isComplete,
   ) async {
     final channel = IOWebSocketChannel.connect(uri, headers: headers);
     try {
@@ -103,7 +165,7 @@ class ChatVoiceSocketService {
       await for (final event in channel.stream) {
         frameIndex++;
         last = _decode(event);
-        final done = isVoiceResponseComplete(last);
+        final done = isComplete(last);
         _logIncomingFrame(frameIndex, last, complete: done);
         if (done) {
           return last;
@@ -116,6 +178,13 @@ class ChatVoiceSocketService {
     } finally {
       unawaited(channel.sink.close());
     }
+  }
+
+  /// Completes on first assistant text (no audio), playable audio, or error — same socket as voice.
+  static bool isAssistantReplyComplete(Object? data) {
+    if (isVoiceResponseComplete(data)) return true;
+    final parsed = ChatAudioResponse.fromData(data);
+    return parsed.text.trim().isNotEmpty;
   }
 
   static void _logOutgoing(Uri uri, Map<String, Object?> payload) {
