@@ -4,7 +4,9 @@ enum AssistantStatus {
   idle,
   listening,
   recognized,
+  uploading,
   responding,
+  playing,
   mapLaunching,
   error,
 }
@@ -15,6 +17,9 @@ class AssistantState extends Equatable {
     this.transcript = '',
     this.response = 'Turn on the air conditioner in the living room.',
     this.recordingPath = '',
+    this.conversationId = '',
+    this.messages = const [],
+    this.replyAudioPath = '',
     this.errorMessage,
     this.lastCommand,
   });
@@ -23,16 +28,23 @@ class AssistantState extends Equatable {
   final String transcript;
   final String response;
   final String recordingPath;
+  final String conversationId;
+  final List<ChatMessage> messages;
+  final String replyAudioPath;
   final String? errorMessage;
   final MapsCommand? lastCommand;
 
   bool get isListening => status == AssistantStatus.listening;
+  bool get hasMessages => messages.isNotEmpty;
 
   AssistantState copyWith({
     AssistantStatus? status,
     String? transcript,
     String? response,
     String? recordingPath,
+    String? conversationId,
+    List<ChatMessage>? messages,
+    String? replyAudioPath,
     String? errorMessage,
     MapsCommand? lastCommand,
     bool clearError = false,
@@ -42,6 +54,9 @@ class AssistantState extends Equatable {
       transcript: transcript ?? this.transcript,
       response: response ?? this.response,
       recordingPath: recordingPath ?? this.recordingPath,
+      conversationId: conversationId ?? this.conversationId,
+      messages: messages ?? this.messages,
+      replyAudioPath: replyAudioPath ?? this.replyAudioPath,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       lastCommand: lastCommand ?? this.lastCommand,
     );
@@ -49,11 +64,14 @@ class AssistantState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        transcript,
-        response,
-        recordingPath,
-        errorMessage,
-        lastCommand,
-      ];
+    status,
+    transcript,
+    response,
+    recordingPath,
+    conversationId,
+    messages,
+    replyAudioPath,
+    errorMessage,
+    lastCommand,
+  ];
 }

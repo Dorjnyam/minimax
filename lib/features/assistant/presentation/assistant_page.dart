@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/assistant_cubit.dart';
 import 'widgets/assistant_chips.dart';
 import 'widgets/assistant_controls.dart';
+import 'widgets/assistant_messages.dart';
 import 'widgets/assistant_orb.dart';
 
 class AssistantPage extends StatelessWidget {
@@ -60,9 +61,18 @@ class AssistantPage extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Center(child: AssistantOrb(active: state.isListening)),
+                    Center(
+                      child: AssistantOrb(
+                        active: state.isListening,
+                        size: MediaQuery.sizeOf(context).height < 700
+                            ? 150
+                            : 230,
+                      ),
+                    ),
                     const Spacer(),
                     _AssistantTranscriptPanel(state: state),
+                    const SizedBox(height: 10),
+                    AssistantMessagePreview(state: state),
                     if (state.errorMessage != null) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -75,7 +85,7 @@ class AssistantPage extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const Spacer(),
+                    const SizedBox(height: 8),
                     AssistantMicControls(
                       isListening: state.isListening,
                       onMicPressed: () =>

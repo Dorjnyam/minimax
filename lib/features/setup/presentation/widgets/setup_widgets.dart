@@ -26,9 +26,9 @@ class SetupHeader extends StatelessWidget {
               Text(
                 'Baigalaa Setup',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
               ),
               Text(
                 serviceRunning ? 'Wake listener active' : 'Wake listener off',
@@ -71,9 +71,9 @@ class SetupStatusPanel extends StatelessWidget {
             Text(
               statusMessage,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0,
-                  ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
             ),
             const SizedBox(height: 14),
             Wrap(
@@ -104,11 +104,7 @@ class SetupStatusPanel extends StatelessWidget {
 }
 
 class SetupStatusChip extends StatelessWidget {
-  const SetupStatusChip({
-    super.key,
-    required this.label,
-    required this.passed,
-  });
+  const SetupStatusChip({super.key, required this.label, required this.passed});
 
   final String label;
   final bool passed;
@@ -299,9 +295,9 @@ class TaskLogPanel extends StatelessWidget {
             Text(
               'Recent events',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0,
-                  ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
             ),
             const SizedBox(height: 10),
             for (final entry in entries)

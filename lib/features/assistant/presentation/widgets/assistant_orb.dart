@@ -3,9 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class AssistantOrb extends StatefulWidget {
-  const AssistantOrb({super.key, required this.active});
+  const AssistantOrb({super.key, required this.active, this.size = 230});
 
   final bool active;
+  final double size;
 
   @override
   State<AssistantOrb> createState() => _AssistantOrbState();
@@ -49,7 +50,7 @@ class _AssistantOrbState extends State<AssistantOrb>
               active: widget.active,
               drag: _drag,
             ),
-            size: const Size.square(230),
+            size: Size.square(widget.size),
           );
         },
       ),
@@ -75,13 +76,16 @@ class _OrbPainter extends CustomPainter {
     final baseRadius = size.width * 0.27 * pulse;
 
     final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white.withValues(alpha: active ? 0.75 : 0.55),
-          const Color(0xFFB070FF).withValues(alpha: 0.55),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.38));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.white.withValues(alpha: active ? 0.75 : 0.55),
+              const Color(0xFFB070FF).withValues(alpha: 0.55),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(center: center, radius: size.width * 0.38),
+          );
     canvas.drawCircle(center, size.width * 0.38, glowPaint);
 
     for (var i = 0; i < 4; i++) {

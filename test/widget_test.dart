@@ -123,6 +123,28 @@ void main() {
     expect(find.textContaining('.m4a'), findsOneWidget);
     await cubit.close();
   });
+
+  testWidgets('Assistant message preview opens chat history sheet', (
+    tester,
+  ) async {
+    final cubit = AssistantCubit(
+      repository: const MockAssistantRepository(),
+      mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+      ),
+    );
+
+    expect(find.text('Messages'), findsOneWidget);
+    await tester.tap(find.text('Messages'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('No messages yet'), findsOneWidget);
+    await cubit.close();
+  });
 }
 
 AuthRepository _profileRepository() {

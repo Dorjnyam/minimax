@@ -7,8 +7,14 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../../shared/services/maps_launcher_service.dart';
+import '../../auth/data/auth_storage.dart';
+import '../../chat/data/chat_audio_playback_service.dart';
+import '../../chat/data/chat_repository.dart';
+import '../../chat/data/chat_voice_socket_service.dart';
+import '../../chat/domain/chat_models.dart';
 import '../data/assistant_repository.dart';
 import '../domain/maps_command.dart';
+import '../services/assistant_chat_service.dart';
 import '../services/assistant_audio_recorder.dart';
 
 part 'assistant_state.dart';
@@ -29,6 +35,11 @@ class AssistantCubit extends Cubit<AssistantState> {
     stt.SpeechToText? speech,
     AssistantAudioRecorder? audioRecorder,
     AssistantAudioRecorder Function()? audioRecorderFactory,
+    AuthStorage authStorage = const SecureAuthStorage(),
+    ChatRepository? chatRepository,
+    ChatVoiceSocketService? chatVoiceSocket,
+    ChatAudioPlaybackService? chatAudioPlayback,
+    AssistantChatService? chatService,
   }) : _repository = repository,
        _mapsLauncher = mapsLauncher,
        _parser = parser,
@@ -36,6 +47,14 @@ class AssistantCubit extends Cubit<AssistantState> {
        _audioRecorder = audioRecorder,
        _audioRecorderFactory =
            audioRecorderFactory ?? (() => M4aAssistantAudioRecorder()),
+       _chatService =
+           chatService ??
+           AssistantChatService(
+             authStorage: authStorage,
+             chatRepository: chatRepository ?? const ChatRepository(),
+             voiceSocket: chatVoiceSocket ?? const ChatVoiceSocketService(),
+             audioPlayback: chatAudioPlayback ?? ChatAudioPlaybackService(),
+           ),
        super(const AssistantState());
 
   final AssistantRepository _repository;
@@ -44,6 +63,7 @@ class AssistantCubit extends Cubit<AssistantState> {
   final stt.SpeechToText _speech;
   AssistantAudioRecorder? _audioRecorder;
   final AssistantAudioRecorder Function() _audioRecorderFactory;
+  final AssistantChatService _chatService;
   Timer? _listenTimeout;
   bool _responding = false;
   String? _activeRecordingPath;
@@ -124,8 +144,26 @@ class AssistantCubit extends Cubit<AssistantState> {
     }
   }
 
-  Future<void> submitText(String text) {
+  Future<void> submitText(String text, {String? recordingPath}) {
+    if (recordingPath != null && recordingPath.isNotEmpty) {
+      _activeRecordingPath = recordingPath;
+    }
     return _handleRecognizedText(text);
+  }
+
+  Future<void> loadMessages() async {
+    try {
+      final result = await _chatService.loadMessages(state.conversationId);
+      emit(
+        state.copyWith(
+          conversationId: result.conversationId,
+          messages: result.messages,
+          clearError: true,
+        ),
+      );
+    } catch (error) {
+      emit(state.copyWith(errorMessage: '$error'));
+    }
   }
 
   Future<void> runSuggestion(AssistantSuggestion suggestion) {
@@ -171,6 +209,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     _listenTimeout?.cancel();
 
     final text = rawText.trim();
+    final hadActiveRecording = _activeRecordingPath != null;
     final recordingPath = await _stopRecording();
     try {
       await _speech.stop();
@@ -189,6 +228,8 @@ class AssistantCubit extends Cubit<AssistantState> {
     final command = _parser.parse(text);
     if (command != null) {
       await _launchMapCommand(command);
+    } else if (recordingPath.isNotEmpty && hadActiveRecording) {
+      await _respondWithChat(text, recordingPath);
     } else {
       await _respondWithMock(text);
     }
@@ -253,6 +294,75 @@ class AssistantCubit extends Cubit<AssistantState> {
     emit(state.copyWith(status: AssistantStatus.responding));
     final reply = await _repository.replyTo(text);
     emit(state.copyWith(status: AssistantStatus.idle, response: reply.text));
+  }
+
+  Future<void> _respondWithChat(String text, String recordingPath) async {
+    try {
+      final context = await _chatService.prepare(state.conversationId);
+      final userMessage = ChatMessage.local(
+        conversationId: context.conversationId,
+        role: 'user',
+        content: text.isEmpty ? 'Voice message' : text,
+      );
+      emit(
+        state.copyWith(
+          status: AssistantStatus.uploading,
+          conversationId: context.conversationId,
+          messages: [...state.messages, userMessage],
+          response: 'Sending voice message...',
+          clearError: true,
+        ),
+      );
+
+      final reply = await _chatService.sendAudio(
+        context: context,
+        audioPath: recordingPath,
+      );
+      var localAudioPath = '';
+      if (reply.audioUrl.isNotEmpty) {
+        emit(state.copyWith(status: AssistantStatus.playing));
+        try {
+          localAudioPath = await _chatService.playAudio(
+            context: context,
+            audioUrl: reply.audioUrl,
+          );
+        } catch (error) {
+          emit(state.copyWith(errorMessage: 'Audio playback failed: $error'));
+        }
+      }
+
+      final assistantText = reply.text.isEmpty
+          ? 'Voice response received.'
+          : reply.text;
+      final assistantMessage = ChatMessage.local(
+        conversationId: context.conversationId,
+        role: 'assistant',
+        content: assistantText,
+      );
+      final freshMessages = await _chatService.safeMessages(context);
+      emit(
+        state.copyWith(
+          status: AssistantStatus.idle,
+          response: assistantText,
+          messages: freshMessages.isEmpty
+              ? [...state.messages, assistantMessage]
+              : freshMessages,
+          replyAudioPath: localAudioPath,
+          clearError: localAudioPath.isNotEmpty,
+        ),
+      );
+    } catch (error) {
+      final missingToken = error is StateError;
+      emit(
+        state.copyWith(
+          status: AssistantStatus.error,
+          response: missingToken
+              ? 'Please log in again.'
+              : 'Could not send voice message.',
+          errorMessage: '$error',
+        ),
+      );
+    }
   }
 
   @override

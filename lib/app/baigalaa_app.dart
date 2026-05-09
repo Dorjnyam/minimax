@@ -5,6 +5,9 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/auth_storage.dart';
 import '../features/auth/presentation/auth_gate.dart';
 import '../features/assistant/data/assistant_repository.dart';
+import '../features/chat/data/chat_audio_playback_service.dart';
+import '../features/chat/data/chat_repository.dart';
+import '../features/chat/data/chat_voice_socket_service.dart';
 import '../features/transit/data/google_routes_transit_repository.dart';
 import '../features/transit/data/transit_repository.dart';
 import '../shared/services/maps_launcher_service.dart';
@@ -37,6 +40,18 @@ class BaigalaaApp extends StatelessWidget {
         ),
         RepositoryProvider<AuthRepository>(
           create: (_) => authRepository ?? const AuthRepository(),
+        ),
+        RepositoryProvider<AuthStorage>(
+          create: (_) => authStorage ?? const SecureAuthStorage(),
+        ),
+        RepositoryProvider<ChatRepository>(
+          create: (_) => const ChatRepository(),
+        ),
+        RepositoryProvider<ChatVoiceSocketService>(
+          create: (_) => const ChatVoiceSocketService(),
+        ),
+        RepositoryProvider<ChatAudioPlaybackService>(
+          create: (_) => ChatAudioPlaybackService(),
         ),
       ],
       child: MaterialApp(

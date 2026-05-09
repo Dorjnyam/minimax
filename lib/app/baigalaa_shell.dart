@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import '../features/auth/data/auth_storage.dart';
 import '../features/assistant/bloc/assistant_cubit.dart';
 import '../features/assistant/data/assistant_repository.dart';
 import '../features/assistant/presentation/assistant_page.dart';
+import '../features/chat/data/chat_audio_playback_service.dart';
+import '../features/chat/data/chat_repository.dart';
+import '../features/chat/data/chat_voice_socket_service.dart';
 import '../features/labs/presentation/labs_page.dart';
 import '../features/setup/presentation/baigalaa_setup_page.dart';
 import '../features/transit/bloc/transit_cubit.dart';
@@ -24,6 +28,10 @@ class BaigalaaShell extends StatelessWidget {
             create: (context) => AssistantCubit(
               repository: context.read<AssistantRepository>(),
               mapsLauncher: context.read<MapsLauncherService>(),
+              authStorage: context.read<AuthStorage>(),
+              chatRepository: context.read<ChatRepository>(),
+              chatVoiceSocket: context.read<ChatVoiceSocketService>(),
+              chatAudioPlayback: context.read<ChatAudioPlaybackService>(),
             ),
             child: const AssistantPage(),
           ),

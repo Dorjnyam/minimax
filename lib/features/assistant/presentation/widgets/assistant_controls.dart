@@ -17,10 +17,7 @@ class AssistantMicControls extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _CircleIconButton(
-          icon: Icons.chat_bubble_outline,
-          onPressed: () {},
-        ),
+        _CircleIconButton(icon: Icons.chat_bubble_outline, onPressed: () {}),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -63,20 +60,14 @@ class AssistantMicControls extends StatelessWidget {
             ),
           ],
         ),
-        _CircleIconButton(
-          icon: Icons.close,
-          onPressed: onClosePressed,
-        ),
+        _CircleIconButton(icon: Icons.close, onPressed: onClosePressed),
       ],
     );
   }
 }
 
 class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _CircleIconButton({required this.icon, required this.onPressed});
 
   final IconData icon;
   final VoidCallback onPressed;
