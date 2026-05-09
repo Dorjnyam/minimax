@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../features/auth/data/auth_storage.dart';
+import '../features/auth/data/session_refresh_service.dart';
 import '../features/assistant/bloc/assistant_cubit.dart';
 import '../features/assistant/data/assistant_repository.dart';
 import '../features/assistant/presentation/assistant_page.dart';
@@ -29,6 +30,7 @@ class BaigalaaShell extends StatelessWidget {
               repository: context.read<AssistantRepository>(),
               mapsLauncher: context.read<MapsLauncherService>(),
               authStorage: context.read<AuthStorage>(),
+              accessTokenProvider: context.read<SessionRefreshService>(),
               chatRepository: context.read<ChatRepository>(),
               chatVoiceSocket: context.read<ChatVoiceSocketService>(),
               chatAudioPlayback: context.read<ChatAudioPlaybackService>(),

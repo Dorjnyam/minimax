@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
+import '../domain/chat_models.dart';
 
 typedef ChatAudioGet =
     Future<http.Response> Function(Uri uri, Map<String, String> headers);
@@ -32,6 +35,30 @@ class ChatAudioPlaybackService {
       throw StateError('Audio download failed: HTTP ${response.statusCode}');
     }
     final path = await _save(uri, response.bodyBytes);
+    await _playPath(path);
+    return path;
+  }
+
+  Future<String> playResponse(ChatAudioResponse response) async {
+    if (response.audioBytes.isNotEmpty) {
+      return _saveAndPlay(response.audioBytes, response.mimeType);
+    }
+    if (response.audioBase64.isNotEmpty) {
+      return _saveAndPlay(
+        base64Decode(response.audioBase64),
+        response.mimeType,
+      );
+    }
+    throw StateError('No inline audio found in response.');
+  }
+
+  Future<String> _saveAndPlay(List<int> bytes, String mimeType) async {
+    final path = await _saveBytes(bytes, _extensionForMime(mimeType));
+    await _playPath(path);
+    return path;
+  }
+
+  Future<void> _playPath(String path) async {
     final play = _play;
     if (play != null) {
       await play(path);
@@ -39,7 +66,6 @@ class ChatAudioPlaybackService {
       final player = _player ??= AudioPlayer();
       await player.play(DeviceFileSource(path));
     }
-    return path;
   }
 
   Uri _resolve(String baseUrl, String audioUrl) {
@@ -64,6 +90,19 @@ class ChatAudioPlaybackService {
     return path;
   }
 
+  Future<String> _saveBytes(List<int> bytes, String ext) async {
+    final root = await getApplicationDocumentsDirectory();
+    final dir = Directory('${root.path}${Platform.pathSeparator}audio_replies');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    final path =
+        '${dir.path}${Platform.pathSeparator}'
+        'reply_${DateTime.now().millisecondsSinceEpoch}$ext';
+    await File(path).writeAsBytes(bytes);
+    return path;
+  }
+
   String _extension(String path) {
     final last = path.split('/').last;
     final index = last.lastIndexOf('.');
@@ -71,6 +110,15 @@ class ChatAudioPlaybackService {
       return '.mp3';
     }
     return last.substring(index);
+  }
+
+  String _extensionForMime(String mimeType) {
+    final lower = mimeType.toLowerCase();
+    if (lower.contains('mp4')) return '.mp4';
+    if (lower.contains('m4a')) return '.m4a';
+    if (lower.contains('aac')) return '.aac';
+    if (lower.contains('wav')) return '.wav';
+    return '.mp3';
   }
 
   static Future<http.Response> _defaultGet(

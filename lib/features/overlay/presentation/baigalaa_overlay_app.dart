@@ -142,19 +142,22 @@ class _BaigalaaOverlayPageState extends State<BaigalaaOverlayPage> {
       await _speech.stop();
     } catch (_) {}
 
-    final response = _mockResponse(transcript);
+    final cleanTranscript = transcript.trim();
+    final response = _mockResponse(cleanTranscript);
     if (!mounted) {
       return;
     }
     setState(() {
       _isListening = false;
       _stateLabel = 'Ready';
-      _transcript = transcript.trim();
+      _transcript = cleanTranscript;
       _response = response;
     });
-    try {
-      await _tts.speak(response);
-    } catch (_) {}
+    if (cleanTranscript.isNotEmpty) {
+      try {
+        await _tts.speak(response);
+      } catch (_) {}
+    }
   }
 
   String _mockResponse(String transcript) {

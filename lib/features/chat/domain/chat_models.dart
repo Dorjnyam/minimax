@@ -78,30 +78,91 @@ class ChatMessage extends Equatable {
 }
 
 class ChatAudioResponse extends Equatable {
-  const ChatAudioResponse({required this.text, required this.audioUrl});
+  const ChatAudioResponse({
+    required this.text,
+    required this.audioUrl,
+    this.audioBase64 = '',
+    this.mimeType = '',
+    this.audioBytes = const [],
+  });
 
   final String text;
   final String audioUrl;
+  final String audioBase64;
+  final String mimeType;
+  final List<int> audioBytes;
+
+  bool get hasAudio =>
+      audioUrl.isNotEmpty || audioBase64.isNotEmpty || audioBytes.isNotEmpty;
+  bool get hasPayload => text.isNotEmpty || hasAudio;
 
   factory ChatAudioResponse.fromData(Object? data) {
-    final map = _findMap(data);
+    if (data is List<int>) {
+      return ChatAudioResponse(
+        text: '',
+        audioUrl: '',
+        audioBytes: List<int>.from(data),
+        mimeType: 'audio/mpeg',
+      );
+    }
+    if (data is String) {
+      final value = data.trim();
+      return ChatAudioResponse(
+        text: _looksLikeAudio(value) ? '' : value,
+        audioUrl: _looksLikeAudioUrl(value) ? value : '',
+        audioBase64: value.startsWith('data:audio/') ? _cleanBase64(value) : '',
+        mimeType: _mimeFromDataUri(value),
+      );
+    }
+    final audio = _findString(data, const [
+      'audio_url',
+      'audioUrl',
+      'mp3_url',
+      'mp3Url',
+      'mp4_url',
+      'mp4Url',
+      'media_url',
+      'mediaUrl',
+      'file_url',
+      'fileUrl',
+      'url',
+      'audio_file',
+      'audioFile',
+      'audio',
+    ]);
+    final inlineAudio = _findString(data, const [
+      'audio_base64',
+      'audioBase64',
+      'audio_data',
+      'audioData',
+      'base64',
+      'audio',
+    ]);
+    final mimeType = _findString(data, const [
+      'mime',
+      'mime_type',
+      'mimeType',
+      'content_type',
+      'contentType',
+    ]);
     return ChatAudioResponse(
-      text: _findString(map, const ['content', 'text', 'message']),
-      audioUrl: _findString(map, const [
-        'audio_url',
-        'audioUrl',
-        'mp3_url',
-        'mp3Url',
-        'mp4_url',
-        'mp4Url',
-        'media_url',
-        'mediaUrl',
-      ]),
+      text: _findString(data, const ['content', 'text', 'message']),
+      audioUrl: _looksLikeAudioUrl(audio) ? audio : '',
+      audioBase64: _looksLikeAudioUrl(inlineAudio)
+          ? ''
+          : _cleanBase64(inlineAudio),
+      mimeType: mimeType.isNotEmpty ? mimeType : _mimeFromDataUri(inlineAudio),
     );
   }
 
   @override
-  List<Object?> get props => [text, audioUrl];
+  List<Object?> get props => [
+    text,
+    audioUrl,
+    audioBase64,
+    mimeType,
+    audioBytes,
+  ];
 }
 
 List<ChatConversation> parseConversations(Object? data) {
@@ -142,18 +203,68 @@ Map<Object?, Object?> _findMap(Object? data) {
   return const {};
 }
 
-String _findString(Map<Object?, Object?> map, List<String> keys) {
-  for (final key in keys) {
-    final value = map[key];
-    if (value != null && value.toString().trim().isNotEmpty) {
-      return value.toString();
+String _findString(Object? data, List<String> keys) {
+  if (data is Map) {
+    final map = Map<Object?, Object?>.from(data);
+    for (final key in keys) {
+      final value = map[key];
+      if (value != null && value is! Map && value is! List) {
+        final text = value.toString().trim();
+        if (text.isNotEmpty) {
+          return text;
+        }
+      }
+    }
+    for (final value in map.values) {
+      final found = _findString(value, keys);
+      if (found.isNotEmpty) {
+        return found;
+      }
     }
   }
-  final data = map['data'];
-  if (data is Map) {
-    return _findString(Map<Object?, Object?>.from(data), keys);
+  if (data is List) {
+    for (final value in data) {
+      final found = _findString(value, keys);
+      if (found.isNotEmpty) {
+        return found;
+      }
+    }
   }
   return '';
+}
+
+bool _looksLikeAudioUrl(String value) {
+  final lower = value.toLowerCase();
+  return lower.startsWith('http://') ||
+      lower.startsWith('https://') ||
+      lower.endsWith('.mp3') ||
+      lower.endsWith('.mp4') ||
+      lower.endsWith('.m4a') ||
+      lower.contains('.mp3?') ||
+      lower.contains('.mp4?') ||
+      lower.contains('.m4a?') ||
+      lower.startsWith('/') ||
+      lower.startsWith('/media/') ||
+      lower.startsWith('/files/');
+}
+
+bool _looksLikeAudio(String value) {
+  return _looksLikeAudioUrl(value) || value.startsWith('data:audio/');
+}
+
+String _cleanBase64(String value) {
+  final clean = value.trim();
+  if (clean.startsWith('data:audio/')) {
+    final comma = clean.indexOf(',');
+    return comma == -1 ? '' : clean.substring(comma + 1);
+  }
+  return clean;
+}
+
+String _mimeFromDataUri(String value) {
+  if (!value.startsWith('data:')) return '';
+  final end = value.indexOf(';');
+  return end == -1 ? '' : value.substring(5, end);
 }
 
 DateTime? _date(Object? value) {

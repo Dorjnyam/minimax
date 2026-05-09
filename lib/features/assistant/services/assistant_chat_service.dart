@@ -1,5 +1,6 @@
 import '../../../shared/constants/baigalaa_constants.dart';
 import '../../auth/data/auth_storage.dart';
+import '../../auth/data/session_refresh_service.dart';
 import '../../chat/data/chat_audio_playback_service.dart';
 import '../../chat/data/chat_repository.dart';
 import '../../chat/data/chat_voice_socket_service.dart';
@@ -8,15 +9,18 @@ import '../../chat/domain/chat_models.dart';
 class AssistantChatService {
   const AssistantChatService({
     required AuthStorage authStorage,
+    required AccessTokenProvider accessTokenProvider,
     required ChatRepository chatRepository,
     required ChatVoiceSocketService voiceSocket,
     required ChatAudioPlaybackService audioPlayback,
   }) : _authStorage = authStorage,
+       _accessTokenProvider = accessTokenProvider,
        _chatRepository = chatRepository,
        _voiceSocket = voiceSocket,
        _audioPlayback = audioPlayback;
 
   final AuthStorage _authStorage;
+  final AccessTokenProvider _accessTokenProvider;
   final ChatRepository _chatRepository;
   final ChatVoiceSocketService _voiceSocket;
   final ChatAudioPlaybackService _audioPlayback;
@@ -72,6 +76,10 @@ class AssistantChatService {
     );
   }
 
+  Future<String> playAudioResponse(ChatAudioResponse response) {
+    return _audioPlayback.playResponse(response);
+  }
+
   Future<List<ChatMessage>> safeMessages(AssistantChatContext context) async {
     try {
       return _chatRepository.messages(
@@ -85,7 +93,7 @@ class AssistantChatService {
   }
 
   Future<_ChatSession> _session() async {
-    final token = await _authStorage.read(apiAccessTokenStorageKey);
+    final token = await _accessTokenProvider.ensureAccessToken();
     if (token == null || token.trim().isEmpty) {
       throw StateError('Please log in again.');
     }

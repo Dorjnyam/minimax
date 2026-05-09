@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/auth_storage.dart';
+import '../features/auth/data/session_refresh_service.dart';
 import '../features/auth/presentation/auth_gate.dart';
 import '../features/assistant/data/assistant_repository.dart';
 import '../features/chat/data/chat_audio_playback_service.dart';
@@ -43,6 +44,12 @@ class BaigalaaApp extends StatelessWidget {
         ),
         RepositoryProvider<AuthStorage>(
           create: (_) => authStorage ?? const SecureAuthStorage(),
+        ),
+        RepositoryProvider<SessionRefreshService>(
+          create: (context) => SessionRefreshService(
+            repository: context.read<AuthRepository>(),
+            storage: context.read<AuthStorage>(),
+          ),
         ),
         RepositoryProvider<ChatRepository>(
           create: (_) => const ChatRepository(),

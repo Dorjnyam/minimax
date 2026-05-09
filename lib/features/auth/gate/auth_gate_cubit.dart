@@ -140,6 +140,7 @@ class AuthGateCubit extends Cubit<AuthGateState> {
   Future<void> _clearSession() async {
     await _storage.delete(apiAccessTokenStorageKey);
     await _storage.delete(apiRefreshTokenStorageKey);
+    await _storage.delete(apiConversationIdStorageKey);
     await _storage.delete(authProfileEmailStorageKey);
     await _storage.delete(authProfileFullNameStorageKey);
     await _storage.delete(authProfilePhoneStorageKey);

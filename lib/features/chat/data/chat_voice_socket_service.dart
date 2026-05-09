@@ -29,39 +29,44 @@ class ChatVoiceSocketService {
     required String conversationId,
     required String audioPath,
   }) async {
-    final uri = socketUri(baseUrl);
-    final payload = await buildAudioPayload(
+    final uri = socketUri(
+      baseUrl: baseUrl,
       conversationId: conversationId,
-      audioPath: audioPath,
+      token: token,
     );
-    final headers = {'Authorization': 'Bearer $token'};
+    final payload = await buildAudioPayload(audioPath: audioPath);
+    final headers = <String, String>{};
     final response = await _exchange(uri, headers, payload).timeout(_timeout);
     return ChatAudioResponse.fromData(_decode(response));
   }
 
-  static Uri socketUri(String baseUrl) {
+  static Uri socketUri({
+    required String baseUrl,
+    required String conversationId,
+    required String token,
+  }) {
     final base = Uri.parse(baseUrl.trim().replaceFirst(RegExp(r'/+$'), ''));
     final scheme = base.scheme == 'https' ? 'wss' : 'ws';
     return Uri(
       scheme: scheme,
       host: base.host,
       port: base.hasPort ? base.port : 0,
-      path: '/ws/chat',
+      path: '/ws/chat/${Uri.encodeComponent(conversationId)}/',
+      queryParameters: {'token': token},
     );
   }
 
+  /// Backend `user_audio` frame: `{ type, audio: base64 file bytes, mime, language }`.
   static Future<Map<String, Object?>> buildAudioPayload({
-    required String conversationId,
     required String audioPath,
   }) async {
     final file = File(audioPath);
     final bytes = await file.readAsBytes();
     return {
-      'type': 'audio.message',
-      'conversation_id': conversationId,
-      'mime_type': 'audio/mp4',
-      'filename': _filename(audioPath),
-      'audio_base64': base64Encode(bytes),
+      'type': 'user_audio',
+      'audio': base64Encode(bytes),
+      'mime': 'audio/m4a',
+      'language': 'mn',
     };
   }
 
@@ -72,11 +77,6 @@ class ChatVoiceSocketService {
     return response;
   }
 
-  static String _filename(String path) {
-    final parts = path.split(RegExp(r'[\\/]'));
-    return parts.isEmpty ? path : parts.last;
-  }
-
   static Future<Object?> _defaultExchange(
     Uri uri,
     Map<String, String> headers,
@@ -85,9 +85,40 @@ class ChatVoiceSocketService {
     final channel = IOWebSocketChannel.connect(uri, headers: headers);
     try {
       channel.sink.add(jsonEncode(payload));
-      return await channel.stream.first;
+      Object? last;
+      await for (final event in channel.stream) {
+        last = _decode(event);
+        if (_isFinalReply(last)) {
+          return last;
+        }
+      }
+      return last;
     } finally {
       unawaited(channel.sink.close());
     }
+  }
+
+  static bool _isFinalReply(Object? data) {
+    final reply = ChatAudioResponse.fromData(data);
+    if (reply.hasAudio) return true;
+    if (!reply.hasPayload) return false;
+    final type = _socketType(data).toLowerCase();
+    return !type.contains('processing') &&
+        !type.contains('status') &&
+        !type.contains('ack') &&
+        !type.contains('partial') &&
+        !type.contains('start');
+  }
+
+  static String _socketType(Object? data) {
+    if (data is Map) {
+      final value = data['type'];
+      if (value != null) return value.toString();
+      final nested = data['data'];
+      if (nested is Map && nested['type'] != null) {
+        return nested['type'].toString();
+      }
+    }
+    return '';
   }
 }

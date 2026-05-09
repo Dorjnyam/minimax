@@ -3,14 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../auth/gate/auth_gate_cubit.dart';
 import '../bloc/assistant_cubit.dart';
 import 'widgets/assistant_chips.dart';
 import 'widgets/assistant_controls.dart';
 import 'widgets/assistant_messages.dart';
 import 'widgets/assistant_orb.dart';
 
+double _orbSize(BuildContext context) {
+  final h = MediaQuery.sizeOf(context).height;
+  if (h < 620) return 130;
+  if (h < 700) return 150;
+  return 230;
+}
+
 class AssistantPage extends StatelessWidget {
-  const AssistantPage({super.key});
+  const AssistantPage({super.key, this.onLogout});
+
+  /// When null (production), calls [AuthGateCubit.signOut]. Tests may pass a noop.
+  final Future<void> Function()? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +43,8 @@ class AssistantPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _AssistantStatusBar(),
-                    const SizedBox(height: 18),
+                    _AssistantStatusBar(onLogout: onLogout),
+                    const SizedBox(height: 12),
                     AssistantChips(
                       onSelected: (suggestion) => unawaited(
                         context.read<AssistantCubit>().runSuggestion(
@@ -52,7 +63,7 @@ class AssistantPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      state.isListening ? 'LISTENING' : 'SAY SOMETHING',
+                      state.isListening ? 'RECORDING' : 'SAY SOMETHING',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.white,
@@ -64,9 +75,7 @@ class AssistantPage extends StatelessWidget {
                     Center(
                       child: AssistantOrb(
                         active: state.isListening,
-                        size: MediaQuery.sizeOf(context).height < 700
-                            ? 150
-                            : 230,
+                        size: _orbSize(context),
                       ),
                     ),
                     const Spacer(),
@@ -176,7 +185,9 @@ class _AssistantTranscriptPanel extends StatelessWidget {
 }
 
 class _AssistantStatusBar extends StatelessWidget {
-  const _AssistantStatusBar();
+  const _AssistantStatusBar({this.onLogout});
+
+  final Future<void> Function()? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -194,11 +205,25 @@ class _AssistantStatusBar extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        Icon(Icons.signal_cellular_4_bar, color: Colors.white, size: 17),
-        const SizedBox(width: 4),
-        Icon(Icons.wifi, color: Colors.white, size: 17),
-        const SizedBox(width: 4),
-        Icon(Icons.battery_full, color: Colors.white, size: 20),
+        IconButton(
+          tooltip: 'Log out',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.logout, color: Colors.white, size: 20),
+          onPressed: () {
+            if (onLogout != null) {
+              unawaited(onLogout!());
+              return;
+            }
+            unawaited(context.read<AuthGateCubit>().signOut());
+          },
+        ),
+        Icon(Icons.signal_cellular_4_bar, color: Colors.white, size: 16),
+        const SizedBox(width: 2),
+        Icon(Icons.wifi, color: Colors.white, size: 16),
+        const SizedBox(width: 2),
+        Icon(Icons.battery_full, color: Colors.white, size: 18),
       ],
     );
   }
