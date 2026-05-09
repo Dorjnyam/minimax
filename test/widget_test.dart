@@ -13,8 +13,12 @@ import 'package:minimax/features/assistant/presentation/assistant_page.dart';
 import 'package:minimax/features/assistant/services/assistant_audio_recorder.dart';
 import 'package:minimax/features/auth/data/auth_repository.dart';
 import 'package:minimax/features/auth/data/auth_storage.dart';
+import 'package:minimax/features/auth/data/session_refresh_service.dart';
+import 'package:minimax/shared/services/maps_launcher_service.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
 import 'package:minimax/shared/services/maps_launcher_service.dart';
+
+Future<void> _noopLogout() async {}
 
 void main() {
   testWidgets('First launch opens login screen immediately', (
@@ -89,12 +93,16 @@ void main() {
     final cubit = AssistantCubit(
       repository: const MockAssistantRepository(),
       mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
+      accessTokenProvider: const FixedAccessTokenProvider('t'),
     );
     await cubit.submitText('hello baigalaa');
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const AssistantPage(onLogout: _noopLogout),
+        ),
       ),
     );
 
@@ -107,13 +115,17 @@ void main() {
     final cubit = AssistantCubit(
       repository: const MockAssistantRepository(),
       mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
+      accessTokenProvider: const FixedAccessTokenProvider('t'),
       audioRecorder: _FakeAudioRecorder(),
     );
     await cubit.submitText('hello baigalaa');
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const AssistantPage(onLogout: _noopLogout),
+        ),
       ),
     );
 
@@ -128,11 +140,15 @@ void main() {
     final cubit = AssistantCubit(
       repository: const MockAssistantRepository(),
       mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
+      accessTokenProvider: const FixedAccessTokenProvider('t'),
     );
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const AssistantPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const AssistantPage(onLogout: _noopLogout),
+        ),
       ),
     );
 
@@ -173,6 +189,16 @@ class _FakeAudioRecorder implements AssistantAudioRecorder {
 
   @override
   Future<String?> start() async => 'C:\\recordings\\test.m4a';
+
+  @override
+  Future<bool> waitForSilence({
+    Duration minDuration = const Duration(milliseconds: 1200),
+    Duration silenceDuration = const Duration(milliseconds: 1500),
+    Duration maxDuration = const Duration(seconds: 12),
+    double voiceThresholdDb = -45,
+  }) async {
+    return true;
+  }
 
   @override
   Future<String?> stop() async => 'C:\\recordings\\test.m4a';

@@ -46,6 +46,18 @@ void main() {
     expect(audio.audioUrl, '/media/reply.mp3');
   });
 
+  test('audio response parser supports inline base64 audio', () {
+    final audio = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'data': {'message': 'done', 'audio': 'AQID', 'mime': 'audio/mp4'},
+    });
+
+    expect(audio.text, 'done');
+    expect(audio.audioBase64, 'AQID');
+    expect(audio.mimeType, 'audio/mp4');
+    expect(audio.hasAudio, isTrue);
+  });
+
   test('repository sends authenticated conversation requests', () async {
     final calls = <String>[];
     final bodies = <Object?>[];

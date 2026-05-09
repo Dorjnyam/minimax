@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../../shared/services/maps_launcher_service.dart';
+import '../../../shared/services/user_location_service.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../auth/data/auth_storage.dart';
+import '../../auth/data/session_refresh_service.dart';
 import '../../chat/data/chat_audio_playback_service.dart';
 import '../../chat/data/chat_repository.dart';
 import '../../chat/data/chat_voice_socket_service.dart';
@@ -32,18 +33,18 @@ class AssistantCubit extends Cubit<AssistantState> {
     required AssistantRepository repository,
     required MapsLauncherService mapsLauncher,
     MapsCommandParser parser = const MapsCommandParser(),
-    stt.SpeechToText? speech,
     AssistantAudioRecorder? audioRecorder,
     AssistantAudioRecorder Function()? audioRecorderFactory,
     AuthStorage authStorage = const SecureAuthStorage(),
+    AccessTokenProvider? accessTokenProvider,
     ChatRepository? chatRepository,
     ChatVoiceSocketService? chatVoiceSocket,
     ChatAudioPlaybackService? chatAudioPlayback,
+    UserLocationService? userLocationService,
     AssistantChatService? chatService,
   }) : _repository = repository,
        _mapsLauncher = mapsLauncher,
        _parser = parser,
-       _speech = speech ?? stt.SpeechToText(),
        _audioRecorder = audioRecorder,
        _audioRecorderFactory =
            audioRecorderFactory ?? (() => M4aAssistantAudioRecorder()),
@@ -51,21 +52,28 @@ class AssistantCubit extends Cubit<AssistantState> {
            chatService ??
            AssistantChatService(
              authStorage: authStorage,
+             accessTokenProvider: accessTokenProvider ??
+                 SessionRefreshService(
+                   repository: const AuthRepository(),
+                   storage: authStorage,
+                 ),
              chatRepository: chatRepository ?? const ChatRepository(),
              voiceSocket: chatVoiceSocket ?? const ChatVoiceSocketService(),
              audioPlayback: chatAudioPlayback ?? ChatAudioPlaybackService(),
+             locationService:
+                 userLocationService ?? UserLocationService(),
            ),
        super(const AssistantState());
 
   final AssistantRepository _repository;
   final MapsLauncherService _mapsLauncher;
   final MapsCommandParser _parser;
-  final stt.SpeechToText _speech;
   AssistantAudioRecorder? _audioRecorder;
   final AssistantAudioRecorder Function() _audioRecorderFactory;
   final AssistantChatService _chatService;
   Timer? _listenTimeout;
   bool _responding = false;
+  int _captureId = 0;
   String? _activeRecordingPath;
 
   Future<void> listen() async {
@@ -91,7 +99,7 @@ class AssistantCubit extends Cubit<AssistantState> {
       state.copyWith(
         status: AssistantStatus.listening,
         transcript: '',
-        response: 'Listening... speak now.',
+        response: 'Recording... speak now.',
         recordingPath: '',
         clearError: true,
       ),
@@ -99,35 +107,8 @@ class AssistantCubit extends Cubit<AssistantState> {
 
     try {
       await _startRecording();
-      final available = await _speech.initialize(
-        onStatus: _onSpeechStatus,
-        onError: (error) => _handleRecognizedText(''),
-        options: [stt.SpeechToText.androidNoBluetooth],
-      );
-      if (!available) {
-        await _stopRecording();
-        emit(
-          state.copyWith(
-            status: AssistantStatus.error,
-            response: 'Speech recognition is unavailable.',
-            errorMessage: 'Install or enable Google Speech Services.',
-          ),
-        );
-        return;
-      }
-
-      await _speech.listen(
-        listenFor: const Duration(seconds: 7),
-        pauseFor: const Duration(seconds: 2),
-        onResult: _onSpeechResult,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          cancelOnError: false,
-          listenMode: stt.ListenMode.confirmation,
-        ),
-      );
-
-      _listenTimeout = Timer(const Duration(seconds: 9), () {
+      _beginAutoStop();
+      _listenTimeout = Timer(const Duration(seconds: 12), () {
         if (state.isListening) {
           unawaited(_handleRecognizedText(state.transcript));
         }
@@ -137,7 +118,7 @@ class AssistantCubit extends Cubit<AssistantState> {
       emit(
         state.copyWith(
           status: AssistantStatus.error,
-          response: 'Speech recognition is unavailable.',
+          response: 'Could not access the microphone.',
           errorMessage: '$error',
         ),
       );
@@ -178,42 +159,16 @@ class AssistantCubit extends Cubit<AssistantState> {
     return _handleRecognizedText(text);
   }
 
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    emit(
-      state.copyWith(
-        transcript: result.recognizedWords,
-        response: result.recognizedWords.isEmpty
-            ? 'Listening... speak now.'
-            : 'I can hear you.',
-        status: AssistantStatus.listening,
-      ),
-    );
-    if (result.finalResult) {
-      unawaited(_handleRecognizedText(result.recognizedWords));
-    }
-  }
-
-  void _onSpeechStatus(String status) {
-    if ((status == stt.SpeechToText.doneStatus ||
-            status == stt.SpeechToText.notListeningStatus) &&
-        state.isListening) {
-      unawaited(_handleRecognizedText(state.transcript));
-    }
-  }
-
   Future<void> _handleRecognizedText(String rawText) async {
-    if (_responding) {
-      return;
-    }
+    if (_responding) return;
     _responding = true;
+    _captureId++;
     _listenTimeout?.cancel();
 
     final text = rawText.trim();
     final hadActiveRecording = _activeRecordingPath != null;
     final recordingPath = await _stopRecording();
-    try {
-      await _speech.stop();
-    } catch (_) {}
+    final shouldSendAudio = hadActiveRecording && recordingPath.isNotEmpty;
 
     emit(
       state.copyWith(
@@ -228,7 +183,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     final command = _parser.parse(text);
     if (command != null) {
       await _launchMapCommand(command);
-    } else if (recordingPath.isNotEmpty && hadActiveRecording) {
+    } else if (shouldSendAudio) {
       await _respondWithChat(text, recordingPath);
     } else {
       await _respondWithMock(text);
@@ -246,6 +201,19 @@ class AssistantCubit extends Cubit<AssistantState> {
     } catch (error) {
       emit(state.copyWith(errorMessage: 'Audio recording unavailable: $error'));
     }
+  }
+
+  void _beginAutoStop() {
+    final recorder = _audioRecorder;
+    if (recorder == null) return;
+    final captureId = ++_captureId;
+    unawaited(
+      recorder.waitForSilence().then((_) {
+        if (captureId == _captureId && state.isListening && !_responding) {
+          unawaited(_handleRecognizedText(state.transcript));
+        }
+      }),
+    );
   }
 
   Future<String> _stopRecording() async {
@@ -319,13 +287,15 @@ class AssistantCubit extends Cubit<AssistantState> {
         audioPath: recordingPath,
       );
       var localAudioPath = '';
-      if (reply.audioUrl.isNotEmpty) {
+      if (reply.hasAudio) {
         emit(state.copyWith(status: AssistantStatus.playing));
         try {
-          localAudioPath = await _chatService.playAudio(
-            context: context,
-            audioUrl: reply.audioUrl,
-          );
+          localAudioPath = reply.audioUrl.isNotEmpty
+              ? await _chatService.playAudio(
+                  context: context,
+                  audioUrl: reply.audioUrl,
+                )
+              : await _chatService.playAudioResponse(reply);
         } catch (error) {
           emit(state.copyWith(errorMessage: 'Audio playback failed: $error'));
         }
@@ -366,12 +336,13 @@ class AssistantCubit extends Cubit<AssistantState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
+    _captureId++;
     _listenTimeout?.cancel();
-    unawaited(_speech.cancel());
     final recorder = _audioRecorder;
+    _audioRecorder = null;
     if (recorder != null) {
-      unawaited(recorder.dispose());
+      await recorder.dispose();
     }
     return super.close();
   }

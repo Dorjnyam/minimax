@@ -50,6 +50,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   audioplayers: ^6.6.0
   lottie: ^3.3.3
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:
