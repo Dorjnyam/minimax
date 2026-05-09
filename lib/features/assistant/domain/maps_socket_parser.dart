@@ -3,15 +3,39 @@ import 'dart:convert';
 import 'maps_command.dart';
 
 /// Parses backend payloads where `type` is `maps_navigate`, `maps_route`, etc.
+///
+/// Supports:
+/// - Root-level `{ "type": "maps_navigate", ... }`
+/// - Nested under merged `data`
+/// - **`assistant_audio`** frames that put map actions in **`actions`**: e.g.
+///   `"actions":[{"type":"maps_navigate","lat":...,"name":"..."}]`
 MapsCommand? parseSocketMapsCommand(Object? raw) {
   final flat = _flattenPayload(raw);
   if (flat == null) return null;
-  final type = flat['type']?.toString();
+
+  final fromRoot = _mapsCommandForTypedMap(flat);
+  if (fromRoot != null) return fromRoot;
+
+  final actions = flat['actions'];
+  if (actions is List) {
+    for (final item in actions) {
+      if (item is Map) {
+        final cmd = _mapsCommandForTypedMap(Map<String, dynamic>.from(item));
+        if (cmd != null) return cmd;
+      }
+    }
+  }
+
+  return null;
+}
+
+MapsCommand? _mapsCommandForTypedMap(Map<String, dynamic> m) {
+  final type = m['type']?.toString();
   return switch (type) {
-    'maps_navigate' => _mapsNavigate(flat),
-    'maps_route' => _mapsRoute(flat),
-    'maps_suggest' => _mapsSuggest(flat),
-    'maps_place' => _mapsPlace(flat),
+    'maps_navigate' => _mapsNavigate(m),
+    'maps_route' => _mapsRoute(m),
+    'maps_suggest' => _mapsSuggest(m),
+    'maps_place' => _mapsPlace(m),
     _ => null,
   };
 }

@@ -65,6 +65,23 @@ void main() {
     expect(route.mapsCommand?.query, '47.916,106.917');
   });
 
+  test('audio response parser reads maps_navigate inside assistant_audio actions', () {
+    final reply = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'content': 'Central TV олдлоо.',
+      'actions': [
+        {
+          'type': 'maps_navigate',
+          'name': 'Central TV',
+          'lat': 47.8935895,
+          'lng': 106.9054189,
+        },
+      ],
+    });
+    expect(reply.mapsCommand?.query, 'Central TV');
+    expect(reply.mapsCommand?.routeAction, MapsRouteAction.navigate);
+  });
+
   test('audio response parser supports inline base64 audio', () {
     final audio = ChatAudioResponse.fromData({
       'type': 'assistant_audio',
