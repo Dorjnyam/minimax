@@ -72,7 +72,7 @@ class BaigalaaApp extends StatelessWidget {
             secondary: const Color(0xFF4E6E5D),
             surface: const Color(0xFFF7F9FB),
           ),
-          scaffoldBackgroundColor: BaigalaaPageGradient.deepPurple,
+          scaffoldBackgroundColor: BaigalaaPageGradient.navy,
           inputDecorationTheme: const InputDecorationTheme(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),

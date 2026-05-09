@@ -23,9 +23,10 @@ class BaigalaaMeshBackground extends StatelessWidget {
 class _MeshLayers extends StatelessWidget {
   const _MeshLayers();
 
-  static Color get _deep => BaigalaaPageGradient.deepPurple;
-  static Color get _mid => BaigalaaPageGradient.midPurple;
-  static Color get _light => BaigalaaPageGradient.surfaceWhite;
+  static Color get _navy => BaigalaaPageGradient.navy;
+  static Color get _magenta => BaigalaaPageGradient.magenta;
+  static Color get _rose => BaigalaaPageGradient.rose;
+  static Color get _mist => BaigalaaPageGradient.mist;
 
   @override
   Widget build(BuildContext context) {
@@ -38,36 +39,51 @@ class _MeshLayers extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                _deep,
-                Color.lerp(_deep, _mid, 0.35)!,
-                _mid,
+                _navy,
+                Color.lerp(_navy, _magenta, 0.45)!,
+                _magenta,
+                Color.lerp(_magenta, _rose, 0.55)!,
               ],
-              stops: const [0.0, 0.55, 1.0],
+              stops: const [0.0, 0.38, 0.72, 1.0],
             ),
           ),
         ),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: const Alignment(-0.35, -0.65),
-              radius: 1.15,
+              center: const Alignment(-0.4, -0.55),
+              radius: 1.12,
               colors: [
-                _light.withValues(alpha: 0.58),
-                _light.withValues(alpha: 0.18),
-                _light.withValues(alpha: 0.0),
+                _mist.withValues(alpha: 0.72),
+                _rose.withValues(alpha: 0.35),
+                _rose.withValues(alpha: 0.0),
               ],
-              stops: const [0.0, 0.38, 1.0],
+              stops: const [0.0, 0.42, 1.0],
             ),
           ),
         ),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: const Alignment(0.95, -0.25),
-              radius: 1.05,
+              center: const Alignment(0.92, -0.2),
+              radius: 0.95,
               colors: [
-                _mid.withValues(alpha: 0.5),
-                _mid.withValues(alpha: 0.0),
+                _magenta.withValues(alpha: 0.55),
+                _magenta.withValues(alpha: 0.08),
+                _magenta.withValues(alpha: 0.0),
+              ],
+              stops: const [0.0, 0.45, 1.0],
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(-0.82, 0.88),
+              radius: 1.08,
+              colors: [
+                _navy.withValues(alpha: 0.72),
+                _navy.withValues(alpha: 0.0),
               ],
               stops: const [0.0, 1.0],
             ),
@@ -76,26 +92,14 @@ class _MeshLayers extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: const Alignment(-0.85, 0.92),
-              radius: 1.1,
+              center: const Alignment(0.25, 0.62),
+              radius: 1.2,
               colors: [
-                _deep.withValues(alpha: 0.58),
-                _deep.withValues(alpha: 0.0),
+                _mist.withValues(alpha: 0.38),
+                _mist.withValues(alpha: 0.1),
+                _mist.withValues(alpha: 0.0),
               ],
-              stops: const [0.0, 1.0],
-            ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0.2, 0.55),
-              radius: 1.25,
-              colors: [
-                _light.withValues(alpha: 0.22),
-                _light.withValues(alpha: 0.0),
-              ],
-              stops: const [0.0, 1.0],
+              stops: const [0.0, 0.4, 1.0],
             ),
           ),
         ),
