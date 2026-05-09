@@ -9,6 +9,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../../shared/constants/baigalaa_constants.dart';
+import '../../../shared/theme/baigalaa_mesh_background.dart';
 import '../../../shared/widgets/fixed_text_scale.dart';
 import 'widgets/overlay_sheet_widgets.dart';
 
@@ -184,76 +185,78 @@ class _BaigalaaOverlayPageState extends State<BaigalaaOverlayPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 35),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 460,
-              maxHeight: overlayHeight - 18,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF111C34).withValues(alpha: 0.86),
-                          const Color(0xFF251A42).withValues(alpha: 0.82),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.16),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x44000000),
-                          blurRadius: 24,
-                          offset: Offset(0, 10),
+    return BaigalaaMeshBackground(
+      child: Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 35),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 460,
+                maxHeight: overlayHeight - 18,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF111C34).withValues(alpha: 0.86),
+                            const Color(0xFF251A42).withValues(alpha: 0.82),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          OverlayHeader(
-                            stateLabel: _stateLabel,
-                            onClose: _closeOverlay,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              OverlayMicOrb(isListening: _isListening),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: OverlayTranscript(
-                                  transcript: _transcript,
-                                  response: _response,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          OverlayActions(
-                            isListening: _isListening,
-                            onAgain: _startInteraction,
-                            onDone: _closeOverlay,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.16),
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x44000000),
+                            blurRadius: 24,
+                            offset: Offset(0, 10),
                           ),
                         ],
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            OverlayHeader(
+                              stateLabel: _stateLabel,
+                              onClose: _closeOverlay,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                OverlayMicOrb(isListening: _isListening),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: OverlayTranscript(
+                                    transcript: _transcript,
+                                    response: _response,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            OverlayActions(
+                              isListening: _isListening,
+                              onAgain: _startInteraction,
+                              onDone: _closeOverlay,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

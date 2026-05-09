@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../shared/constants/baigalaa_constants.dart';
+import '../../../shared/theme/baigalaa_mesh_background.dart';
 import 'auth_theme.dart';
 import 'widgets/auth_hero_lottie.dart';
 
@@ -44,6 +45,7 @@ class _AuthSplashPageState extends State<AuthSplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: _EntryGradient(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -103,10 +105,7 @@ class _EntryGradient extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(gradient: AuthTheme.backgroundGradient),
+    return BaigalaaMeshBackground(
       child: SafeArea(
         child: Padding(padding: const EdgeInsets.all(24), child: child),
       ),

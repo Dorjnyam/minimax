@@ -11,6 +11,7 @@ class AuthOnboardingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: EntryGradient(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

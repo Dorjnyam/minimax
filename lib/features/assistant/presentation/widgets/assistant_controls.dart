@@ -6,18 +6,24 @@ class AssistantMicControls extends StatelessWidget {
     required this.isListening,
     required this.onMicPressed,
     required this.onClosePressed,
+    required this.onMessagesPressed,
   });
 
   final bool isListening;
   final VoidCallback onMicPressed;
   final VoidCallback onClosePressed;
+  final VoidCallback onMessagesPressed;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _CircleIconButton(icon: Icons.chat_bubble_outline, onPressed: () {}),
+        _CircleIconButton(
+          icon: Icons.chat_bubble_outline,
+          tooltip: 'Messages',
+          onPressed: onMessagesPressed,
+        ),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -60,16 +66,25 @@ class AssistantMicControls extends StatelessWidget {
             ),
           ],
         ),
-        _CircleIconButton(icon: Icons.close, onPressed: onClosePressed),
+        _CircleIconButton(
+          icon: Icons.close,
+          tooltip: 'Clear',
+          onPressed: onClosePressed,
+        ),
       ],
     );
   }
 }
 
 class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onPressed});
+  const _CircleIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
 
   final IconData icon;
+  final String tooltip;
   final VoidCallback onPressed;
 
   @override
@@ -81,7 +96,7 @@ class _CircleIconButton extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.04),
       ),
       child: IconButton(
-        tooltip: icon == Icons.close ? 'Clear' : 'Messages',
+        tooltip: tooltip,
         onPressed: onPressed,
         color: Colors.white,
         icon: Icon(icon),

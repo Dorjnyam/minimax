@@ -12,6 +12,7 @@ import '../features/chat/data/chat_voice_socket_service.dart';
 import '../features/transit/data/google_routes_transit_repository.dart';
 import '../features/transit/data/transit_repository.dart';
 import '../shared/services/maps_launcher_service.dart';
+import '../shared/theme/baigalaa_page_gradient.dart';
 import '../shared/widgets/fixed_text_scale.dart';
 
 class BaigalaaApp extends StatelessWidget {
@@ -71,7 +72,7 @@ class BaigalaaApp extends StatelessWidget {
             secondary: const Color(0xFF4E6E5D),
             surface: const Color(0xFFF7F9FB),
           ),
-          scaffoldBackgroundColor: const Color(0xFFF7F9FB),
+          scaffoldBackgroundColor: BaigalaaPageGradient.deepPurple,
           inputDecorationTheme: const InputDecorationTheme(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),

@@ -16,10 +16,4 @@ abstract final class AuthTheme {
   static const Color statusSurface = Color(0xFFECE6EE);
   static const Color error = Color(0xFFBA1A1A);
   static const Color onErrorContainer = Color(0xFF93000A);
-
-  static const LinearGradient backgroundGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFFFDF7FF), Color(0xFFF8F2FA)],
-  );
 }

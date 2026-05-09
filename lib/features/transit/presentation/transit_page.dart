@@ -186,7 +186,7 @@ class _TransitResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.status == TransitStatus.failure) {
-      return _MessageCard(message: state.errorMessage);
+      return const SizedBox.shrink();
     }
     if (state.status == TransitStatus.loading && state.options.isEmpty) {
       return const Center(child: CircularProgressIndicator());
