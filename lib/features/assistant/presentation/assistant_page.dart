@@ -70,8 +70,6 @@ class AssistantPage extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 14),
                                 _AssistantTranscriptPanel(state: state),
-                                const SizedBox(height: 10),
-                                AssistantMessagePreview(state: state),
                                 if (state.errorMessage != null) ...[
                                   const SizedBox(height: 8),
                                   Text(
@@ -105,11 +103,8 @@ class AssistantPage extends StatelessWidget {
                       onClosePressed: () => unawaited(
                         context.read<AssistantCubit>().submitText(''),
                       ),
-                      onMessagesPressed: () {
-                        unawaited(
-                          context.read<AssistantCubit>().loadMessages(),
-                        );
-                      },
+                      onMessagesPressed: () =>
+                          openAssistantMessagesSheet(context),
                     ),
                   ),
                 ),

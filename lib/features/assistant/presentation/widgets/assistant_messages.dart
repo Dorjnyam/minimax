@@ -6,76 +6,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../chat/domain/chat_models.dart';
 import '../../bloc/assistant_cubit.dart';
 
-class AssistantMessagePreview extends StatelessWidget {
-  const AssistantMessagePreview({super.key, required this.state});
-
-  final AssistantState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final latest = state.messages.isEmpty ? null : state.messages.last;
-    final label = latest == null
-        ? 'Messages'
-        : latest.isUser
-        ? 'You'
-        : 'Baigalaa';
-    final text = latest?.content ?? 'Tap to view your conversation history';
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () {
-        unawaited(context.read<AssistantCubit>().loadMessages());
-        showModalBottomSheet<void>(
-          context: context,
-          useSafeArea: true,
-          isScrollControlled: true,
-          backgroundColor: const Color(0xFF10182B),
-          builder: (_) => BlocProvider.value(
-            value: context.read<AssistantCubit>(),
-            child: const AssistantMessagesSheet(),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.forum_outlined, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.expand_less, color: Colors.white70, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
+void openAssistantMessagesSheet(BuildContext context) {
+  unawaited(context.read<AssistantCubit>().loadMessages());
+  showModalBottomSheet<void>(
+    context: context,
+    useSafeArea: true,
+    isScrollControlled: true,
+    backgroundColor: const Color(0xFF10182B),
+    builder: (_) => BlocProvider.value(
+      value: context.read<AssistantCubit>(),
+      child: const AssistantMessagesSheet(),
+    ),
+  );
 }
 
 class AssistantMessagesSheet extends StatefulWidget {
