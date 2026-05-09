@@ -1,7 +1,13 @@
+import 'dart:typed_data' show Uint8List;
+
 import 'package:equatable/equatable.dart';
 
 import '../../assistant/domain/maps_command.dart';
 import '../../assistant/domain/maps_socket_parser.dart';
+
+/// Voice WebSocket sends JSON (`assistant_audio`, `actions`, …) then a binary MP3
+/// frame. [ChatVoiceSocketService] merges metadata with bytes under this key.
+const kVoiceSocketMergedBinaryKey = '_baigalaa_ws_audio_bytes';
 
 class ChatConversation extends Equatable {
   const ChatConversation({
@@ -102,6 +108,31 @@ class ChatAudioResponse extends Equatable {
   bool get hasPayload => text.isNotEmpty || hasAudio;
 
   factory ChatAudioResponse.fromData(Object? data) {
+    if (data is Map) {
+      final m = Map<Object?, Object?>.from(data);
+      final binAny = m[kVoiceSocketMergedBinaryKey];
+      List<int>? mergedBytes;
+      if (binAny is Uint8List) {
+        mergedBytes = List<int>.from(binAny);
+      } else if (binAny is List<int>) {
+        mergedBytes = List<int>.from(binAny);
+      }
+      if (mergedBytes != null) {
+        final bytes = mergedBytes;
+        m.remove(kVoiceSocketMergedBinaryKey);
+        final meta = ChatAudioResponse.fromData(m);
+        return ChatAudioResponse(
+          text: meta.text,
+          audioUrl: meta.audioUrl,
+          audioBase64: meta.audioBase64,
+          mimeType:
+              meta.mimeType.isNotEmpty ? meta.mimeType : 'audio/mpeg',
+          audioBytes: bytes,
+          mapsCommand: meta.mapsCommand,
+        );
+      }
+    }
+
     final mapsFromSocket = parseSocketMapsCommand(data);
     if (data is List<int>) {
       return ChatAudioResponse(

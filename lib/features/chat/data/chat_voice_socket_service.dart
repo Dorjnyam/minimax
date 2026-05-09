@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -142,6 +141,12 @@ class ChatVoiceSocketService {
     return response;
   }
 
+  static List<int>? _coerceSocketBinary(Object? last) {
+    if (last is Uint8List) return List<int>.from(last);
+    if (last is List<int>) return List<int>.from(last);
+    return null;
+  }
+
   static Future<Object?> _defaultExchange(
     Uri uri,
     Map<String, String> headers,
@@ -162,12 +167,30 @@ class ChatVoiceSocketService {
       channel.sink.add(jsonEncode(payload));
       Object? last;
       var frameIndex = 0;
+      /// Last JSON frame with `assistant_audio` / `actions` before binary MP3.
+      Map<String, Object?>? voiceAssistantMeta;
       await for (final event in channel.stream) {
         frameIndex++;
         last = _decode(event);
+        if (last is Map) {
+          final map = Map<String, Object?>.from(last);
+          final type = map['type']?.toString();
+          final actions = map['actions'];
+          if (type == 'assistant_audio' ||
+              (actions is List && actions.isNotEmpty)) {
+            voiceAssistantMeta = map;
+          }
+        }
         final done = isComplete(last);
         _logIncomingFrame(frameIndex, last, complete: done);
         if (done) {
+          final binary = _coerceSocketBinary(last);
+          if (binary != null && voiceAssistantMeta != null) {
+            return <String, Object?>{
+              ...voiceAssistantMeta,
+              kVoiceSocketMergedBinaryKey: binary,
+            };
+          }
           return last;
         }
       }

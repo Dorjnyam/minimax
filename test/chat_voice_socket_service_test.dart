@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:minimax/features/chat/data/chat_voice_socket_service.dart';
+import 'package:minimax/features/chat/domain/chat_models.dart'
+    show kVoiceSocketMergedBinaryKey;
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
 
 void main() {
@@ -170,6 +172,46 @@ void main() {
 
     expect(response.audioBase64, 'AQID');
     expect(response.mimeType, 'audio/mpeg');
+    expect(response.hasAudio, isTrue);
+  });
+
+  test('sendAudio accepts merged assistant_audio + binary contract from exchange', () async {
+    final file = File('${Directory.systemTemp.path}/baigalaa_socket_merge.m4a');
+    await file.writeAsBytes([1]);
+    addTearDown(() {
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    });
+
+    final service = ChatVoiceSocketService(
+      exchange: (_, _, _, _) async {
+        return {
+          'type': 'assistant_audio',
+          'content': 'hello',
+          'audio_mime': 'audio/mpeg',
+          'actions': [
+            {
+              'type': 'maps_navigate',
+              'name': 'Place',
+              'lat': 47.0,
+              'lng': 107.0,
+            },
+          ],
+          kVoiceSocketMergedBinaryKey: <int>[9, 8, 7],
+        };
+      },
+    );
+
+    final response = await service.sendAudio(
+      baseUrl: 'http://api.test',
+      token: 'token',
+      conversationId: 'c2',
+      audioPath: file.path,
+    );
+
+    expect(response.audioBytes, [9, 8, 7]);
+    expect(response.mapsCommand?.query, 'Place');
     expect(response.hasAudio, isTrue);
   });
 }

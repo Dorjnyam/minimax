@@ -82,6 +82,26 @@ void main() {
     expect(reply.mapsCommand?.routeAction, MapsRouteAction.navigate);
   });
 
+  test('merged WS metadata + binary preserves maps actions', () {
+    final reply = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'content': 'Сүхбаатарын талбай олдлоо.',
+      'audio_mime': 'audio/mpeg',
+      'actions': [
+        {
+          'type': 'maps_navigate',
+          'name': 'Сүхбаатарын талбай',
+          'lat': 47.9166872,
+          'lng': 106.917851,
+        },
+      ],
+      kVoiceSocketMergedBinaryKey: <int>[1, 2, 3],
+    });
+    expect(reply.audioBytes, [1, 2, 3]);
+    expect(reply.hasAudio, isTrue);
+    expect(reply.mapsCommand?.query, 'Сүхбаатарын талбай');
+  });
+
   test('audio response parser supports inline base64 audio', () {
     final audio = ChatAudioResponse.fromData({
       'type': 'assistant_audio',
