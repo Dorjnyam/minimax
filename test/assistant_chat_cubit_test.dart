@@ -10,7 +10,6 @@ import 'package:minimax/features/chat/data/chat_repository.dart';
 import 'package:minimax/features/chat/data/chat_voice_socket_service.dart';
 import 'package:minimax/features/chat/domain/chat_models.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
-import 'package:minimax/shared/services/user_location_service.dart';
 import 'package:minimax/shared/services/maps_launcher_service.dart';
 
 void main() {
@@ -36,9 +35,6 @@ void main() {
       chatRepository: _FakeChatRepository(),
       chatVoiceSocket: socket,
       chatAudioPlayback: _FakePlayback(),
-      userLocationService: UserLocationService(
-        override: () async => (lat: 47.9188, lng: 106.9175),
-      ),
     );
 
     await cubit.submitText('hello', recordingPath: file.path);
@@ -73,7 +69,6 @@ void main() {
       chatRepository: _FakeChatRepository(),
       chatVoiceSocket: socket,
       chatAudioPlayback: _FakePlayback(),
-      userLocationService: UserLocationService(override: () async => null),
     );
 
     await cubit.submitText('hello', recordingPath: file.path);
@@ -95,9 +90,6 @@ void main() {
       chatRepository: _FakeChatRepository(),
       chatVoiceSocket: socket,
       chatAudioPlayback: _FakePlayback(),
-      userLocationService: UserLocationService(
-        override: () async => (lat: 47.9188, lng: 106.9175),
-      ),
     );
 
     await cubit.sendUserTypedMessage('hello typed');
@@ -185,6 +177,16 @@ class _FakePlayback implements ChatAudioPlaybackService {
     required String audioUrl,
   }) async {
     return 'local-reply.mp3';
+  }
+
+  @override
+  Future<String> downloadTtsAndPlay({
+    required String baseUrl,
+    required String token,
+    required String text,
+    String? voiceId,
+  }) async {
+    return 'local-tts.mp3';
   }
 
   @override

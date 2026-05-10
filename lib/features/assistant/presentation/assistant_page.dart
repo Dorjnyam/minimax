@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../app/shell_navigation_scope.dart';
+import '../../../shared/theme/baigalaa_assistant_shell.dart';
 import '../bloc/assistant_cubit.dart';
 import 'widgets/assistant_chips.dart';
 import 'widgets/assistant_controls.dart';
@@ -24,13 +26,7 @@ class AssistantPage extends StatelessWidget {
     return BlocBuilder<AssistantCubit, AssistantState>(
       builder: (context, state) {
         return DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF14233D), Color(0xFF5855B0), Color(0xFF191C32)],
-            ),
-          ),
+          decoration: BaigalaaAssistantShell.boxDecoration,
           child: Material(
             color: Colors.transparent,
             child: Column(
@@ -39,18 +35,34 @@ class AssistantPage extends StatelessWidget {
                 Expanded(
                   child: SafeArea(
                     bottom: false,
-                    child: Padding(
+                      child: Padding(
                       padding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          Row(
+                            children: [
+                              const Spacer(),
+                              IconButton(
+                                tooltip: 'Сануулга',
+                                onPressed: () =>
+                                    ShellNavigationScope.of(context).goToPage(2),
+                                icon: const Icon(
+                                  Icons.task_alt_rounded,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
                           Expanded(
                             child: Center(
                               child: _InteractiveOrb(
                                 active: state.isListening,
                                 size: _orbSize(context),
                                 onTap: () => unawaited(
-                                  context.read<AssistantCubit>().listen(),
+                                  context
+                                      .read<AssistantCubit>()
+                                      .toggleListening(),
                                 ),
                               ),
                             ),
@@ -98,10 +110,11 @@ class AssistantPage extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
                     child: AssistantMicControls(
                       isListening: state.isListening,
-                      onMicPressed: () =>
-                          unawaited(context.read<AssistantCubit>().listen()),
+                      onMicPressed: () => unawaited(
+                        context.read<AssistantCubit>().toggleListening(),
+                      ),
                       onClosePressed: () => unawaited(
-                        context.read<AssistantCubit>().submitText(''),
+                        context.read<AssistantCubit>().cancelOrDismiss(),
                       ),
                       onMessagesPressed: () =>
                           openAssistantMessagesSheet(context),
@@ -192,25 +205,25 @@ class _AssistantTranscriptPanel extends StatelessWidget {
             letterSpacing: 0,
           ),
         ),
-        if (state.recordingPath.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Saved m4a: ${_compactPath(state.recordingPath)}',
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.68),
-              letterSpacing: 0,
-            ),
-          ),
-        ],
+        // if (state.recordingPath.isNotEmpty) ...[
+        //   const SizedBox(height: 8),
+        //   Text(
+        //     'Saved m4a: ${_compactPath(state.recordingPath)}',
+        //     textAlign: TextAlign.center,
+        //     maxLines: 1,
+        //     overflow: TextOverflow.ellipsis,
+        //     style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        //       color: Colors.white.withValues(alpha: 0.68),
+        //       letterSpacing: 0,
+        //     ),
+        //   ),
+        // ],
       ],
     );
   }
 
-  String _compactPath(String path) {
-    final parts = path.split(RegExp(r'[\\/]'));
-    return parts.isEmpty ? path : parts.last;
-  }
+  // String _compactPath(String path) {
+  //   final parts = path.split(RegExp(r'[\\/]'));
+  //   return parts.isEmpty ? path : parts.last;
+  // }
 }

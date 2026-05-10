@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../auth_theme.dart';
 
@@ -16,6 +17,9 @@ class AuthTextField extends StatelessWidget {
     this.enableSuggestions = true,
     this.autocorrect = true,
     this.validator,
+    this.inputFormatters,
+    this.smartDashesType,
+    this.smartQuotesType,
   });
 
   final TextEditingController controller;
@@ -31,6 +35,9 @@ class AuthTextField extends StatelessWidget {
   final bool enableSuggestions;
   final bool autocorrect;
   final FormFieldValidator<String>? validator;
+  final List<TextInputFormatter>? inputFormatters;
+  final SmartDashesType? smartDashesType;
+  final SmartQuotesType? smartQuotesType;
 
   static const Color _focusRing = AuthTheme.primaryContainer;
 
@@ -82,6 +89,9 @@ class AuthTextField extends StatelessWidget {
         autofillHints: autofillHints,
         enableSuggestions: enableSuggestions,
         autocorrect: autocorrect,
+        inputFormatters: inputFormatters,
+        smartDashesType: smartDashesType,
+        smartQuotesType: smartQuotesType,
         validator: validator,
         style: darkNeon
             ? const TextStyle(color: AuthTheme.onSurface, fontWeight: FontWeight.w500)

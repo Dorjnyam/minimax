@@ -1,7 +1,4 @@
-import 'package:flutter/foundation.dart';
-
 import '../../../shared/constants/baigalaa_constants.dart';
-import '../../../shared/services/user_location_service.dart';
 import '../../auth/data/auth_storage.dart';
 import '../../auth/data/session_refresh_service.dart';
 import '../../chat/data/chat_audio_playback_service.dart';
@@ -16,20 +13,17 @@ class AssistantChatService {
     required ChatRepository chatRepository,
     required ChatVoiceSocketService voiceSocket,
     required ChatAudioPlaybackService audioPlayback,
-    UserLocationService? locationService,
   }) : _authStorage = authStorage,
        _accessTokenProvider = accessTokenProvider,
        _chatRepository = chatRepository,
        _voiceSocket = voiceSocket,
-       _audioPlayback = audioPlayback,
-       _locationService = locationService ?? UserLocationService();
+       _audioPlayback = audioPlayback;
 
   final AuthStorage _authStorage;
   final AccessTokenProvider _accessTokenProvider;
   final ChatRepository _chatRepository;
   final ChatVoiceSocketService _voiceSocket;
   final ChatAudioPlaybackService _audioPlayback;
-  final UserLocationService _locationService;
 
   Future<AssistantChatContext> prepare(String currentConversationId) async {
     final session = await _session();
@@ -63,52 +57,26 @@ class AssistantChatService {
     required AssistantChatContext context,
     required String audioPath,
   }) async {
-    final coords = await _locationService.getCurrent();
-    if (kDebugMode) {
-      if (coords != null) {
-        debugPrint(
-          '[Baigalaa VoiceSocket] GPS for sendAudio: lat=${coords.lat} lng=${coords.lng}',
-        );
-      } else {
-        debugPrint(
-          '[Baigalaa VoiceSocket] GPS for sendAudio: null '
-          '(denied, services off, timeout, or error — location omitted from payload)',
-        );
-      }
-    }
     return _voiceSocket.sendAudio(
       baseUrl: context.baseUrl,
       token: context.token,
       conversationId: context.conversationId,
       audioPath: audioPath,
-      location: coords,
+      location: null,
     );
   }
 
-  /// Text chat over the same WebSocket URL as voice; body is `user_message` + GPS.
+  /// Text chat over the same WebSocket URL as voice (`user_message`; no location payload).
   Future<ChatAudioResponse> sendUserText({
     required AssistantChatContext context,
     required String content,
   }) async {
-    final coords = await _locationService.getCurrent();
-    if (kDebugMode) {
-      if (coords != null) {
-        debugPrint(
-          '[Baigalaa VoiceSocket] GPS for user_message: lat=${coords.lat} lng=${coords.lng}',
-        );
-      } else {
-        debugPrint(
-          '[Baigalaa VoiceSocket] GPS for user_message: null '
-          '(denied, services off, timeout, or error — location omitted from payload)',
-        );
-      }
-    }
     return _voiceSocket.sendUserMessage(
       baseUrl: context.baseUrl,
       token: context.token,
       conversationId: context.conversationId,
       content: content,
-      location: coords,
+      location: null,
     );
   }
 

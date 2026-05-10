@@ -10,17 +10,17 @@ import 'maps_command.dart';
 /// - **`assistant_audio`** frames that put map actions in **`actions`**: e.g.
 ///   `"actions":[{"type":"maps_navigate","lat":...,"name":"..."}]`
 MapsCommand? parseSocketMapsCommand(Object? raw) {
-  final flat = _flattenPayload(raw);
+  final flat = flattenSocketPayload(raw);
   if (flat == null) return null;
 
-  final fromRoot = _mapsCommandForTypedMap(flat);
+  final fromRoot = mapsCommandFromTypedActionMap(flat);
   if (fromRoot != null) return fromRoot;
 
   final actions = flat['actions'];
   if (actions is List) {
     for (final item in actions) {
       if (item is Map) {
-        final cmd = _mapsCommandForTypedMap(Map<String, dynamic>.from(item));
+        final cmd = mapsCommandFromTypedActionMap(Map<String, dynamic>.from(item));
         if (cmd != null) return cmd;
       }
     }
@@ -29,7 +29,9 @@ MapsCommand? parseSocketMapsCommand(Object? raw) {
   return null;
 }
 
-MapsCommand? _mapsCommandForTypedMap(Map<String, dynamic> m) {
+/// Maps tool shapes (`maps_navigate`, …) to [MapsCommand].
+MapsCommand? mapsCommandFromTypedActionMap(Map<String, dynamic> m) {
+  if (_hasHttpsMapsUrl(m)) return null;
   final type = m['type']?.toString();
   return switch (type) {
     'maps_navigate' => _mapsNavigate(m),
@@ -40,14 +42,15 @@ MapsCommand? _mapsCommandForTypedMap(Map<String, dynamic> m) {
   };
 }
 
-Map<String, dynamic>? _flattenPayload(Object? raw) {
+/// Flatten nested `data` for socket JSON (merged assistant payloads).
+Map<String, dynamic>? flattenSocketPayload(Object? raw) {
   if (raw == null) return null;
   if (raw is String) {
     final t = raw.trim();
     if (t.isEmpty) return null;
     try {
       final decoded = jsonDecode(t);
-      return _flattenPayload(decoded);
+      return flattenSocketPayload(decoded);
     } catch (_) {
       return null;
     }
@@ -59,6 +62,14 @@ Map<String, dynamic>? _flattenPayload(Object? raw) {
     return {...map, ...Map<String, dynamic>.from(inner)};
   }
   return map;
+}
+
+bool _hasHttpsMapsUrl(Map<String, dynamic> m) {
+  final urlStr = m['maps_url']?.toString().trim() ?? '';
+  if (urlStr.isEmpty) return false;
+  final uri = Uri.tryParse(urlStr);
+  return uri != null &&
+      (uri.scheme == 'https' || uri.scheme == 'http');
 }
 
 double? _toDouble(Object? value) {

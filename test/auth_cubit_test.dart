@@ -74,7 +74,7 @@ void main() {
     );
 
     expect(cubit.state.status, AuthStatus.failure);
-    expect(cubit.state.errorMessage, contains('HTTP 500'));
+    expect(cubit.state.errorMessage, contains('Серверийн'));
   });
 
   test('logout clears stored session and profile', () async {

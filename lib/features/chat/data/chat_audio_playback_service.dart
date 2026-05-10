@@ -39,6 +39,28 @@ class ChatAudioPlaybackService {
     return path;
   }
 
+  /// GET `/api/v1/agents/tts` — returns raw audio (e.g. MP3).
+  Future<String> downloadTtsAndPlay({
+    required String baseUrl,
+    required String token,
+    required String text,
+    String? voiceId,
+  }) async {
+    final safeBase = baseUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+    final qp = <String, String>{'text': text};
+    if (voiceId != null && voiceId.trim().isNotEmpty) {
+      qp['voice_id'] = voiceId.trim();
+    }
+    final uri = Uri.parse('$safeBase/api/v1/agents/tts').replace(
+      queryParameters: qp,
+    );
+    final response = await _get(uri, {'Authorization': 'Bearer $token'});
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('TTS failed: HTTP ${response.statusCode}');
+    }
+    return _saveAndPlay(response.bodyBytes, 'audio/mpeg');
+  }
+
   Future<String> playResponse(ChatAudioResponse response) async {
     if (response.audioBytes.isNotEmpty) {
       return _saveAndPlay(response.audioBytes, response.mimeType);

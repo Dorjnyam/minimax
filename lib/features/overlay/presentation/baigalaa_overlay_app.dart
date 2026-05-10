@@ -1,17 +1,27 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart'
+    hide NotificationVisibility;
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:permission_handler/permission_handler.dart';
 
+import '../../assistant/presentation/widgets/assistant_controls.dart';
 import '../../../shared/constants/baigalaa_constants.dart';
-import '../../../shared/theme/baigalaa_mesh_background.dart';
 import '../../../shared/widgets/fixed_text_scale.dart';
+import 'overlay_strings.dart';
+import 'overlay_voice_session.dart';
 import 'widgets/overlay_sheet_widgets.dart';
+
+/// Shell isolate — brand navy; use opacity for see-through layers.
+const Color _overlayChrome = Color(0xFF14233D);
+const Color _overlayAccent = Color(0xFF5855B0);
+
+/// Dim behind the sheet (underlying app shows through slightly).
+const double _kBackdropOpacity = 0.48;
+
+/// Card surface — readable but still a bit transparent.
+const double _kPanelOpacity = 0.86;
 
 class BaigalaaOverlayApp extends StatelessWidget {
   const BaigalaaOverlayApp({super.key});
@@ -24,10 +34,9 @@ class BaigalaaOverlayApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF007C89),
-          primary: const Color(0xFF007C89),
-          secondary: const Color(0xFF4E6E5D),
-          surface: Colors.white,
+          seedColor: _overlayAccent,
+          brightness: Brightness.dark,
+          surface: _overlayChrome,
         ),
       ),
       home: const BaigalaaOverlayPage(),
@@ -43,220 +52,317 @@ class BaigalaaOverlayPage extends StatefulWidget {
 }
 
 class _BaigalaaOverlayPageState extends State<BaigalaaOverlayPage> {
-  final _speech = stt.SpeechToText();
-  final _tts = FlutterTts();
-
+  late final OverlayVoiceSession _voice;
   StreamSubscription<dynamic>? _overlaySubscription;
-  Timer? _fallbackTimer;
-  String _stateLabel = 'Listening';
+
+  Timer? _listenTimeout;
+  int _captureId = 0;
+  bool _listening = false;
+  bool _responding = false;
+
+  /// Idle | recording | uploading | playing (subtitle under title).
+  String _phaseLabel = OverlayStrings.subtitleIdle;
   String _transcript = '';
   String _response = '';
-  bool _isListening = false;
-  bool _hasResponded = false;
 
   @override
   void initState() {
     super.initState();
+    _voice = OverlayVoiceSession();
     FlutterForegroundTask.sendDataToTask({'command': cmdPause});
     _overlaySubscription = FlutterOverlayWindow.overlayListener.listen((_) {});
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_startInteraction());
-    });
   }
 
   @override
   void dispose() {
-    _fallbackTimer?.cancel();
+    _listenTimeout?.cancel();
     _overlaySubscription?.cancel();
-    unawaited(_speech.cancel());
-    unawaited(_tts.stop());
+    unawaited(_voice.closeRecorder());
     super.dispose();
   }
 
-  Future<void> _startInteraction() async {
-    _fallbackTimer?.cancel();
+  String _headlineText() {
+    if (_listening) return OverlayStrings.recording;
+    if (_transcript.isNotEmpty) return _transcript;
+    if (_phaseLabel == OverlayStrings.uploading) {
+      return OverlayStrings.voiceMessageLabel;
+    }
+    return OverlayStrings.hintIdle;
+  }
+
+  String _detailText() {
+    if (_listening) return OverlayStrings.recordingSpeakNow;
+    return _response;
+  }
+
+  void _beginAutoStop() {
+    final captureId = ++_captureId;
+    unawaited(
+      _voice.recorder.waitForSilence().then((_) {
+        if (captureId == _captureId && _listening && !_responding) {
+          unawaited(_finalizePipeline());
+        }
+      }),
+    );
+  }
+
+  Future<void> listen() async {
+    if (_listening || _responding) return;
+
+    final permission = await Permission.microphone.request();
+    if (!permission.isGranted) {
+      setState(() {
+        _phaseLabel = OverlayStrings.subtitleIdle;
+        _response = OverlayStrings.micDenied;
+      });
+      return;
+    }
+
     setState(() {
-      _stateLabel = 'Listening';
+      _listening = true;
+      _phaseLabel = OverlayStrings.recording;
       _transcript = '';
-      _response = '';
-      _isListening = true;
-      _hasResponded = false;
+      _response = OverlayStrings.recordingSpeakNow;
     });
 
     try {
-      await _tts.awaitSpeakCompletion(true);
-      await _tts.setLanguage('mn-MN');
-      await _tts.setSpeechRate(0.42);
-      await _tts.setPitch(1.0);
-      final available = await _speech.initialize(
-        onStatus: _onSpeechStatus,
-        onError: (_) => unawaited(_finishInteraction('')),
-        options: [stt.SpeechToText.androidNoBluetooth],
-      );
-      if (!available) {
-        await _finishInteraction('');
+      final path = await _voice.startRecording();
+      if (path == null || path.isEmpty) {
+        await _voice.cancelRecording();
+        if (!mounted) return;
+        setState(() {
+          _listening = false;
+          _phaseLabel = OverlayStrings.subtitleIdle;
+          _response = OverlayStrings.recordFailed;
+        });
         return;
       }
 
-      await _speech.listen(
-        listenFor: const Duration(seconds: 7),
-        pauseFor: const Duration(seconds: 2),
-        onResult: _onSpeechResult,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          cancelOnError: false,
-          listenMode: stt.ListenMode.confirmation,
-        ),
-      );
-      _fallbackTimer = Timer(const Duration(seconds: 9), () {
-        if (!_hasResponded) {
-          unawaited(_finishInteraction(_transcript));
+      _beginAutoStop();
+      _listenTimeout = Timer(const Duration(seconds: 12), () {
+        if (_listening && !_responding) {
+          unawaited(_finalizePipeline());
         }
       });
-    } catch (_) {
-      await _finishInteraction('');
+    } catch (e) {
+      await _voice.cancelRecording();
+      if (!mounted) return;
+      setState(() {
+        _listening = false;
+        _phaseLabel = OverlayStrings.subtitleIdle;
+        _response = OverlayStrings.errorBrief(e);
+      });
     }
   }
 
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    setState(() => _transcript = result.recognizedWords);
-    if (result.finalResult && !_hasResponded) {
-      unawaited(_finishInteraction(result.recognizedWords));
-    }
-  }
-
-  void _onSpeechStatus(String status) {
-    if ((status == stt.SpeechToText.doneStatus ||
-            status == stt.SpeechToText.notListeningStatus) &&
-        !_hasResponded) {
-      unawaited(_finishInteraction(_transcript));
-    }
-  }
-
-  Future<void> _finishInteraction(String transcript) async {
-    if (_hasResponded) {
+  Future<void> toggleListening() async {
+    if (_responding) return;
+    if (_listening) {
+      _listenTimeout?.cancel();
+      await _finalizePipeline();
       return;
     }
-    _hasResponded = true;
-    _fallbackTimer?.cancel();
-    try {
-      await _speech.stop();
-    } catch (_) {}
+    await listen();
+  }
 
-    final cleanTranscript = transcript.trim();
-    final response = _mockResponse(cleanTranscript);
-    if (!mounted) {
+  Future<void> cancelOrDismiss() async {
+    if (_responding) return;
+    if (_listening) {
+      _listenTimeout?.cancel();
+      await _finalizePipeline();
       return;
     }
     setState(() {
-      _isListening = false;
-      _stateLabel = 'Ready';
-      _transcript = cleanTranscript;
-      _response = response;
+      _transcript = '';
+      _response = '';
+      _phaseLabel = OverlayStrings.subtitleIdle;
     });
-    if (cleanTranscript.isNotEmpty) {
-      try {
-        await _tts.speak(response);
-      } catch (_) {}
-    }
   }
 
-  String _mockResponse(String transcript) {
-    final normalized = transcript.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      return '\u0421\u0430\u0439\u043d \u0441\u043e\u043d\u0441\u043e\u0433\u0434\u0441\u043e\u043d\u0433\u04af\u0439. '
-          '\u0414\u0430\u0445\u0438\u0430\u0434 \u0445\u044d\u043b\u043d\u044d \u04af\u04af.';
+  Future<void> _finalizePipeline() async {
+    if (_responding) return;
+    _responding = true;
+    _captureId++;
+    _listenTimeout?.cancel();
+
+    final path = await _voice.stopRecording();
+
+    if (!mounted) {
+      _responding = false;
+      return;
     }
-    if (normalized.contains('time')) {
-      final now = TimeOfDay.now();
-      final hour = now.hour.toString().padLeft(2, '0');
-      final minute = now.minute.toString().padLeft(2, '0');
-      return '\u041e\u0434\u043e\u043e $hour:$minute \u0431\u043e\u043b\u0436 \u0431\u0430\u0439\u043d\u0430.';
+
+    setState(() {
+      _listening = false;
+    });
+
+    if (path.isEmpty) {
+      setState(() {
+        _phaseLabel = OverlayStrings.subtitleIdle;
+        _response = OverlayStrings.emptyRecording;
+        _transcript = '';
+      });
+      _responding = false;
+      return;
     }
-    return '\u0411\u0438 \u0441\u043e\u043d\u0441\u043b\u043e\u043e: $transcript. '
-        'Backend \u0445\u0430\u0440\u0438\u0443\u043b\u0442 \u0434\u0430\u0440\u0430\u0430 \u043d\u044c '
-        '\u044d\u043d\u0434 \u0445\u043e\u043b\u0431\u043e\u0433\u0434\u043e\u043d\u043e.';
+
+    setState(() {
+      _phaseLabel = OverlayStrings.uploading;
+      _transcript = OverlayStrings.voiceMessageLabel;
+      _response = '';
+    });
+
+    try {
+      final bundle = await _voice.sendRecording(path).timeout(
+        const Duration(seconds: 45),
+        onTimeout: () =>
+            throw TimeoutException('Илгээлт цаг хэтэрлээ.', const Duration(seconds: 45)),
+      );
+      final reply = bundle.reply;
+      final ctx = bundle.context;
+
+      final assistantText = reply.text.trim().isEmpty
+          ? 'Хариу ирлээ.'
+          : reply.text.trim();
+
+      setState(() {
+        _response = assistantText;
+      });
+
+      if (reply.hasAudio) {
+        setState(() => _phaseLabel = OverlayStrings.playing);
+        try {
+          await _voice.playAssistantAudio(context: ctx, reply: reply);
+        } catch (_) {
+          if (mounted) {
+            setState(() {
+              _response = '$assistantText\n(Аудио тоглуулахад алдаа гарлаа.)';
+            });
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _phaseLabel = OverlayStrings.subtitleIdle;
+          _transcript = '';
+        });
+      }
+    } on StateError catch (e) {
+      if (mounted) {
+        final login =
+            e.message.contains('log in') || e.message.contains('Please log');
+        setState(() {
+          _phaseLabel = OverlayStrings.subtitleIdle;
+          _transcript = '';
+          _response =
+              login ? OverlayStrings.loginRequired : OverlayStrings.errorBrief(e);
+        });
+      }
+    } on TimeoutException catch (e) {
+      if (mounted) {
+        setState(() {
+          _phaseLabel = OverlayStrings.subtitleIdle;
+          _transcript = '';
+          _response = e.message ?? OverlayStrings.errorBrief(e);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _phaseLabel = OverlayStrings.subtitleIdle;
+          _transcript = '';
+          _response = OverlayStrings.errorBrief(e);
+        });
+      }
+    } finally {
+      _responding = false;
+    }
   }
 
   Future<void> _closeOverlay() async {
+    _listenTimeout?.cancel();
+    if (_listening && !_responding) {
+      _captureId++;
+      await _voice.cancelRecording();
+      if (mounted) {
+        setState(() {
+          _listening = false;
+          _phaseLabel = OverlayStrings.subtitleIdle;
+          _transcript = '';
+          _response = '';
+        });
+      }
+    }
     FlutterForegroundTask.sendDataToTask({'command': cmdResume});
     await FlutterOverlayWindow.closeOverlay();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BaigalaaMeshBackground(
+    return ColoredBox(
+      color: _overlayChrome.withValues(alpha: _kBackdropOpacity),
       child: Material(
         color: Colors.transparent,
         child: SafeArea(
-          minimum: const EdgeInsets.only(bottom: 35),
+          minimum: const EdgeInsets.only(bottom: 8),
           child: Align(
             alignment: Alignment.bottomCenter,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 460,
-                maxHeight: overlayHeight - 18,
+              constraints: BoxConstraints(
+                maxWidth: 340,
+                maxHeight: overlayHeight - 16,
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            const Color(0xFF111C34).withValues(alpha: 0.86),
-                            const Color(0xFF251A42).withValues(alpha: 0.82),
-                          ],
+                padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 8,
+                  shadowColor: Colors.black.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                    decoration: BoxDecoration(
+                      color: _overlayChrome.withValues(alpha: _kPanelOpacity),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.16),
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x44000000),
-                            blurRadius: 24,
-                            offset: Offset(0, 10),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          OverlayHeader(
+                            dense: true,
+                            stateLabel: _phaseLabel,
+                            onClose: () => unawaited(_closeOverlay()),
+                          ),
+                          const SizedBox(height: 6),
+                          OverlayTranscript(
+                            dense: true,
+                            headline: _headlineText(),
+                            detail: _detailText(),
+                          ),
+                          const SizedBox(height: 8),
+                          AssistantMicControls(
+                            compact: true,
+                            isListening: _listening,
+                            showMessages: false,
+                            onMicPressed: () => unawaited(toggleListening()),
+                            onClosePressed: () => unawaited(cancelOrDismiss()),
+                            onMessagesPressed: () {},
                           ),
                         ],
-                      ),
-                      child: SingleChildScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            OverlayHeader(
-                              stateLabel: _stateLabel,
-                              onClose: _closeOverlay,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                OverlayMicOrb(isListening: _isListening),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: OverlayTranscript(
-                                    transcript: _transcript,
-                                    response: _response,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            OverlayActions(
-                              isListening: _isListening,
-                              onAgain: _startInteraction,
-                              onDone: _closeOverlay,
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),

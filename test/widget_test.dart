@@ -6,14 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:minimax/app/baigalaa_app.dart';
+import 'package:minimax/app/shell_navigation_scope.dart';
 import 'package:minimax/features/api_console/data/hackathon_api_client.dart';
 import 'package:minimax/features/assistant/bloc/assistant_cubit.dart';
 import 'package:minimax/features/assistant/data/assistant_repository.dart';
 import 'package:minimax/features/assistant/presentation/assistant_page.dart';
 import 'package:minimax/features/profile/presentation/baigalaa_profile_page.dart';
-import 'package:minimax/features/assistant/services/assistant_audio_recorder.dart';
+import 'package:minimax/features/auth/bloc/auth_cubit.dart';
 import 'package:minimax/features/auth/data/auth_repository.dart';
 import 'package:minimax/features/auth/data/auth_storage.dart';
+import 'package:minimax/features/auth/domain/auth_models.dart';
+import 'package:minimax/features/auth/gate/auth_gate_cubit.dart';
 import 'package:minimax/features/auth/data/session_refresh_service.dart';
 import 'package:minimax/shared/services/maps_launcher_service.dart';
 import 'package:minimax/shared/constants/baigalaa_constants.dart';
@@ -24,7 +27,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Тавтай морилно уу', skipOffstage: false), findsOneWidget);
+    expect(find.text('Нэвтрэх', skipOffstage: false), findsWidgets);
     expect(
       find.text('Бүртгэл байхгүй юу? Бүртгүүлэх', skipOffstage: false),
       findsOneWidget,
@@ -62,38 +65,18 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(
-          value: cubit,
-          child: const AssistantPage(),
+        home: ShellNavigationScope(
+          goToPage: (_) {},
+          child: BlocProvider.value(
+            value: cubit,
+            child: const AssistantPage(),
+          ),
         ),
       ),
     );
 
     expect(find.text('You said'), findsOneWidget);
     expect(find.text('hello baigalaa'), findsOneWidget);
-    await cubit.close();
-  });
-
-  testWidgets('Assistant page displays saved m4a path', (tester) async {
-    final cubit = AssistantCubit(
-      repository: const MockAssistantRepository(),
-      mapsLauncher: MapsLauncherService(launch: (_, _) async => true),
-      accessTokenProvider: const FixedAccessTokenProvider('t'),
-      audioRecorder: _FakeAudioRecorder(),
-    );
-    await cubit.submitText('hello baigalaa');
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: BlocProvider.value(
-          value: cubit,
-          child: const AssistantPage(),
-        ),
-      ),
-    );
-
-    expect(find.textContaining('Saved m4a'), findsOneWidget);
-    expect(find.textContaining('.m4a'), findsOneWidget);
     await cubit.close();
   });
 
@@ -108,15 +91,18 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider.value(
-          value: cubit,
-          child: const AssistantPage(),
+        home: ShellNavigationScope(
+          goToPage: (_) {},
+          child: BlocProvider.value(
+            value: cubit,
+            child: const AssistantPage(),
+          ),
         ),
       ),
     );
 
-    expect(find.text('Messages'), findsOneWidget);
-    await tester.tap(find.text('Messages'));
+    expect(find.byTooltip('Messages'), findsOneWidget);
+    await tester.tap(find.byTooltip('Messages'));
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('No messages yet'), findsOneWidget);
@@ -124,12 +110,77 @@ void main() {
   });
 
   testWidgets('Baigalaa profile hub shows sections', (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: BaigalaaProfilePage()),
+    final repo = AuthRepository(
+      client: HackathonApiClient(
+        send: (method, uri, headers, body) async {
+          if (uri.path.contains('/integrations/google/status')) {
+            return http.Response(
+              jsonEncode({'connected': false}),
+              200,
+            );
+          }
+          return http.Response('{}', 200);
+        },
+      ),
     );
-    expect(find.text('Profile & settings'), findsOneWidget);
-    expect(find.text('GROUPS & FRIENDS'), findsOneWidget);
-    expect(find.text('Edit profile'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<AuthRepository>.value(value: repo),
+        ],
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>(
+              create: (context) {
+                final cubit = AuthCubit(repository: context.read<AuthRepository>());
+                cubit.emit(
+                  cubit.state.copyWith(
+                    baseUrl: 'http://api.test',
+                    session: const AuthSession(
+                      accessToken: 'token',
+                      refreshToken: '',
+                    ),
+                    user: const AuthUser(
+                      email: 'u@test.com',
+                      fullName: 'Test User',
+                      phone: '123',
+                    ),
+                  ),
+                );
+                return cubit;
+              },
+            ),
+            BlocProvider<AuthGateCubit>(
+              create: (context) => AuthGateCubit(
+                repository: context.read<AuthRepository>(),
+                storage: MemoryAuthStorage(),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            home: const BaigalaaProfilePage(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(find.text('Profile'), findsOneWidget);
+    expect(find.textContaining('Хуваарьт'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('GOOGLE'),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    expect(find.text('GOOGLE'), findsOneWidget);
+    expect(find.text('POLICY & PRIVACY'), findsOneWidget);
+    expect(find.text('Link Google account'), findsOneWidget);
+    expect(
+      find.byIcon(Icons.logout_rounded, skipOffstage: false),
+      findsOneWidget,
+    );
   });
 }
 
@@ -150,28 +201,4 @@ AuthRepository _profileRepository() {
       },
     ),
   );
-}
-
-class _FakeAudioRecorder implements AssistantAudioRecorder {
-  @override
-  Future<void> cancel() async {}
-
-  @override
-  Future<void> dispose() async {}
-
-  @override
-  Future<String?> start() async => 'C:\\recordings\\test.m4a';
-
-  @override
-  Future<bool> waitForSilence({
-    Duration minDuration = const Duration(milliseconds: 1200),
-    Duration silenceDuration = const Duration(milliseconds: 1500),
-    Duration maxDuration = const Duration(seconds: 12),
-    double voiceThresholdDb = -45,
-  }) async {
-    return true;
-  }
-
-  @override
-  Future<String?> stop() async => 'C:\\recordings\\test.m4a';
 }

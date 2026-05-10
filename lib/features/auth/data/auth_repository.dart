@@ -1,5 +1,6 @@
 import '../../api_console/data/hackathon_api_client.dart';
 import '../domain/auth_models.dart';
+import '../domain/google_integration_models.dart';
 
 class AuthApiException implements Exception {
   const AuthApiException(this.message, {this.statusCode});
@@ -87,6 +88,37 @@ class AuthRepository {
       token: accessToken,
     );
     return AuthUser.fromData(result.data);
+  }
+
+  /// JSON includes OAuth URL field — open in browser to link Google.
+  Future<Uri> googleConnectUri({
+    required String baseUrl,
+    required String accessToken,
+  }) async {
+    final result = await _request(
+      baseUrl: baseUrl,
+      method: 'GET',
+      path: '/integrations/google/connect',
+      token: accessToken,
+    );
+    final url = parseGoogleConnectUrl(result.data);
+    if (url == null || url.isEmpty) {
+      throw const AuthApiException('No Google OAuth URL in response.');
+    }
+    return Uri.parse(url);
+  }
+
+  Future<GoogleIntegrationStatus> googleIntegrationStatus({
+    required String baseUrl,
+    required String accessToken,
+  }) async {
+    final result = await _request(
+      baseUrl: baseUrl,
+      method: 'GET',
+      path: '/integrations/google/status',
+      token: accessToken,
+    );
+    return GoogleIntegrationStatus.fromData(result.data);
   }
 
   Future<ApiCallResult> _request({

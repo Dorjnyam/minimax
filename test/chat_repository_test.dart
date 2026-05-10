@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:minimax/features/api_console/data/hackathon_api_client.dart';
+import 'package:minimax/features/assistant/domain/assistant_follow_up_action.dart';
 import 'package:minimax/features/assistant/domain/maps_command.dart';
 import 'package:minimax/features/chat/data/chat_repository.dart';
 import 'package:minimax/features/chat/domain/chat_models.dart';
@@ -100,6 +101,97 @@ void main() {
     expect(reply.audioBytes, [1, 2, 3]);
     expect(reply.hasAudio, isTrue);
     expect(reply.mapsCommand?.query, 'Сүхбаатарын талбай');
+  });
+
+  test('followUps contact_save yields tel then mailto', () {
+    final reply = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'actions': [
+        {
+          'type': 'contact',
+          'event': 'contact_save',
+          'ok': true,
+          'data': {
+            'contact': {
+              'name': 'Бат',
+              'phone': '99112233',
+              'email': 'bat@example.com',
+            },
+          },
+        },
+      ],
+    });
+    expect(reply.followUps.length, 2);
+    expect(reply.followUps[0], isA<AssistantFollowUpOpenUri>());
+    expect(
+      (reply.followUps[0] as AssistantFollowUpOpenUri).uri.scheme,
+      'tel',
+    );
+    expect(reply.followUps[1], isA<AssistantFollowUpOpenUri>());
+    expect(
+      (reply.followUps[1] as AssistantFollowUpOpenUri).uri.scheme,
+      'mailto',
+    );
+  });
+
+  test('followUps group_member_location opens maps for first member', () {
+    final reply = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'actions': [
+        {
+          'type': 'group_location',
+          'event': 'group_member_location',
+          'ok': true,
+          'data': {
+            'members': [
+              {
+                'member': {'full_name': 'Дүү'},
+                'location': {
+                  'lat': 47.9152,
+                  'lng': 106.9205,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
+    expect(reply.followUps.length, 1);
+    expect(reply.followUps.single, isA<AssistantFollowUpMaps>());
+    expect(reply.mapsCommand?.query, 'Дүү');
+  });
+
+  test('maps_navigate with maps_url yields OpenUri not duplicate MapsCommand', () {
+    final reply = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'actions': [
+        {
+          'type': 'maps_navigate',
+          'name': 'Square',
+          'lat': 47.9,
+          'lng': 106.9,
+          'maps_url':
+              'https://www.google.com/maps/dir/?api=1&destination=47.9,106.9',
+        },
+      ],
+    });
+    expect(reply.followUps.single, isA<AssistantFollowUpOpenUri>());
+    expect(reply.mapsCommand, isNull);
+  });
+
+  test('memory_remember produces no external followUps', () {
+    final reply = ChatAudioResponse.fromData({
+      'type': 'assistant_audio',
+      'actions': [
+        {
+          'type': 'memory',
+          'event': 'memory_remember',
+          'ok': true,
+          'data': {'key': 'k', 'value': 'v'},
+        },
+      ],
+    });
+    expect(reply.followUps, isEmpty);
   });
 
   test('audio response parser supports inline base64 audio', () {

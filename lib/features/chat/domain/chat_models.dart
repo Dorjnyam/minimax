@@ -2,6 +2,8 @@ import 'dart:typed_data' show Uint8List;
 
 import 'package:equatable/equatable.dart';
 
+import '../../assistant/domain/assistant_follow_up_action.dart';
+import '../../assistant/domain/assistant_follow_up_parser.dart';
 import '../../assistant/domain/maps_command.dart';
 import '../../assistant/domain/maps_socket_parser.dart';
 
@@ -94,6 +96,7 @@ class ChatAudioResponse extends Equatable {
     this.mimeType = '',
     this.audioBytes = const [],
     this.mapsCommand,
+    this.followUps = const [],
   });
 
   final String text;
@@ -102,6 +105,9 @@ class ChatAudioResponse extends Equatable {
   final String mimeType;
   final List<int> audioBytes;
   final MapsCommand? mapsCommand;
+
+  /// Parsed `assistant_audio.actions[]`: Maps, tel/mail/https opens (after TTS).
+  final List<AssistantFollowUp> followUps;
 
   bool get hasAudio =>
       audioUrl.isNotEmpty || audioBase64.isNotEmpty || audioBytes.isNotEmpty;
@@ -129,11 +135,14 @@ class ChatAudioResponse extends Equatable {
               meta.mimeType.isNotEmpty ? meta.mimeType : 'audio/mpeg',
           audioBytes: bytes,
           mapsCommand: meta.mapsCommand,
+          followUps: meta.followUps,
         );
       }
     }
 
-    final mapsFromSocket = parseSocketMapsCommand(data);
+    final followUps = parseAssistantFollowUps(data);
+    final mapsFromFollowUps = _firstMapsCommandFromFollowUps(followUps);
+    final mapsFromSocket = mapsFromFollowUps ?? parseSocketMapsCommand(data);
     if (data is List<int>) {
       return ChatAudioResponse(
         text: '',
@@ -141,6 +150,7 @@ class ChatAudioResponse extends Equatable {
         audioBytes: List<int>.from(data),
         mimeType: 'audio/mpeg',
         mapsCommand: mapsFromSocket,
+        followUps: followUps,
       );
     }
     if (data is String) {
@@ -151,6 +161,7 @@ class ChatAudioResponse extends Equatable {
         audioBase64: value.startsWith('data:audio/') ? _cleanBase64(value) : '',
         mimeType: _mimeFromDataUri(value),
         mapsCommand: mapsFromSocket,
+        followUps: followUps,
       );
     }
     final audio = _findString(data, const [
@@ -192,6 +203,7 @@ class ChatAudioResponse extends Equatable {
           : _cleanBase64(inlineAudio),
       mimeType: mimeType.isNotEmpty ? mimeType : _mimeFromDataUri(inlineAudio),
       mapsCommand: mapsFromSocket,
+      followUps: followUps,
     );
   }
 
@@ -203,7 +215,15 @@ class ChatAudioResponse extends Equatable {
     mimeType,
     audioBytes,
     mapsCommand,
+    followUps,
   ];
+}
+
+MapsCommand? _firstMapsCommandFromFollowUps(List<AssistantFollowUp> followUps) {
+  for (final u in followUps) {
+    if (u is AssistantFollowUpMaps) return u.command;
+  }
+  return null;
 }
 
 List<ChatConversation> parseConversations(Object? data) {

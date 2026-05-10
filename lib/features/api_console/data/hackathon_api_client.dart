@@ -35,8 +35,9 @@ class HackathonApiClient {
     required String path,
     String? token,
     Map<String, Object?>? body,
+    Map<String, String>? queryParameters,
   }) async {
-    final uri = _uri(baseUrl, path);
+    final uri = _uri(baseUrl, path, queryParameters: queryParameters);
     final headers = <String, String>{
       'Accept': 'application/json',
       if (body != null) 'Content-Type': 'application/json',
@@ -57,12 +58,17 @@ class HackathonApiClient {
     );
   }
 
-  Uri _uri(String baseUrl, String path) {
+  Uri _uri(String baseUrl, String path, {Map<String, String>? queryParameters}) {
     final cleanBase = baseUrl.trim().replaceFirst(RegExp(r'/+$'), '');
     if (cleanBase.isEmpty) {
       throw ArgumentError('Base URL is required.');
     }
-    return Uri.parse('$cleanBase$path');
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    final uri = Uri.parse('$cleanBase$normalizedPath');
+    if (queryParameters != null && queryParameters.isNotEmpty) {
+      return uri.replace(queryParameters: queryParameters);
+    }
+    return uri;
   }
 
   Object? _decode(String raw) {

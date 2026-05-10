@@ -15,7 +15,7 @@ class AssistantState extends Equatable {
   const AssistantState({
     this.status = AssistantStatus.idle,
     this.transcript = '',
-    this.response = 'Turn on the air conditioner in the living room.',
+    this.response = '',
     this.recordingPath = '',
     this.conversationId = '',
     this.messages = const [],

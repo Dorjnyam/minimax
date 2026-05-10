@@ -20,10 +20,13 @@ void main() {
       mapsLauncher: maps,
     );
 
-    await cubit.runSuggestion(AssistantSuggestion.coffeeNearMe);
+    await cubit.runSuggestion(AssistantSuggestion.nearbyPlaces);
 
     expect(cubit.state.status, AssistantStatus.idle);
-    expect(cubit.state.lastCommand, const MapsCommand.search('Coffee Near Me'));
+    expect(
+      cubit.state.lastCommand,
+      const MapsCommand.search('Restaurants Near Me'),
+    );
     expect(launchedUri?.scheme, 'geo');
     await cubit.close();
   });

@@ -4,10 +4,10 @@ const accessKeyStorageKey = 'picovoice_access_key';
 const routesApiKeyStorageKey = 'google_routes_api_key';
 
 /// Backend on LAN (Android/iOS physical device, emulator with host IP, etc.).
-const defaultApiBaseUrlLan = 'http://192.168.0.153:8778';
+const defaultApiBaseUrlLan = 'http://10.255.215.199:8778';
 
 /// Backend on same machine as Flutter **web** (`flutter run -d chrome`).
-const defaultApiBaseUrlLocalhost = 'http://192.168.0.153:8778';
+const defaultApiBaseUrlLocalhost = 'http://10.255.215.199:8778';
 
 /// Default API origin: **web** uses localhost; native uses LAN (see above).
 String get defaultApiBaseUrl =>
@@ -52,4 +52,5 @@ const eventStatus = 'status';
 const eventWake = 'wake';
 const eventError = 'error';
 
-const overlayHeight = 720;
+/// Overlay window height (dp). Keep compact so the card fits without clipping.
+const overlayHeight = 320;

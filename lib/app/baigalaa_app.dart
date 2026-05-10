@@ -6,11 +6,17 @@ import '../features/auth/data/auth_storage.dart';
 import '../features/auth/data/session_refresh_service.dart';
 import '../features/auth/presentation/auth_gate.dart';
 import '../features/assistant/data/assistant_repository.dart';
+import '../features/assistant/services/assistant_chat_service.dart';
 import '../features/chat/data/chat_audio_playback_service.dart';
 import '../features/chat/data/chat_repository.dart';
 import '../features/chat/data/chat_voice_socket_service.dart';
+import '../features/reminders/data/reminder_pause_storage.dart';
+import '../features/groups/data/groups_repository.dart';
+import '../features/reminders/data/reminders_repository.dart';
+import '../features/reminders/services/reminder_notification_service.dart';
 import '../features/transit/data/google_routes_transit_repository.dart';
 import '../features/transit/data/transit_repository.dart';
+import '../shared/services/assistant_follow_up_launcher.dart';
 import '../shared/services/maps_launcher_service.dart';
 import '../shared/theme/baigalaa_page_gradient.dart';
 import '../shared/widgets/fixed_text_scale.dart';
@@ -35,6 +41,11 @@ class BaigalaaApp extends StatelessWidget {
         RepositoryProvider<MapsLauncherService>(
           create: (_) => const MapsLauncherService(),
         ),
+        RepositoryProvider<AssistantFollowUpLauncher>(
+          create: (context) => AssistantFollowUpLauncher(
+            mapsLauncher: context.read<MapsLauncherService>(),
+          ),
+        ),
         RepositoryProvider<TransitRepository>(
           create: (_) => const GoogleRoutesTransitRepository(),
         ),
@@ -58,6 +69,31 @@ class BaigalaaApp extends StatelessWidget {
         ),
         RepositoryProvider<ChatAudioPlaybackService>(
           create: (_) => ChatAudioPlaybackService(),
+        ),
+        RepositoryProvider<AssistantChatService>(
+          create: (context) => AssistantChatService(
+            authStorage: context.read<AuthStorage>(),
+            accessTokenProvider: context.read<SessionRefreshService>(),
+            chatRepository: context.read<ChatRepository>(),
+            voiceSocket: context.read<ChatVoiceSocketService>(),
+            audioPlayback: context.read<ChatAudioPlaybackService>(),
+          ),
+        ),
+        RepositoryProvider<RemindersRepository>(
+          create: (context) => RemindersRepository(
+            sessionRefresh: context.read<SessionRefreshService>(),
+          ),
+        ),
+        RepositoryProvider<GroupsRepository>(
+          create: (context) => GroupsRepository(
+            sessionRefresh: context.read<SessionRefreshService>(),
+          ),
+        ),
+        RepositoryProvider<ReminderPauseStorage>(
+          create: (_) => ReminderPauseStorage(),
+        ),
+        RepositoryProvider<ReminderNotificationService>(
+          create: (_) => ReminderNotificationService(),
         ),
       ],
       child: MaterialApp(

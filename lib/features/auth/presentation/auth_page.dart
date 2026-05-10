@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/constants/baigalaa_constants.dart';
-import '../../../shared/theme/baigalaa_mesh_background.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
-import 'auth_splash_page.dart';
+import 'auth_splash_page.dart' show EntryLogoMark;
 import 'auth_theme.dart';
 import 'widgets/auth_hero_lottie.dart';
 import 'widgets/auth_sections.dart';
@@ -57,11 +56,24 @@ class _AuthPageState extends State<AuthPage> {
         const listPad = EdgeInsets.fromLTRB(20, 16, 20, 40);
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: BaigalaaMeshBackground(
-            child: SafeArea(
-              child: ListView(
-                padding: listPad,
-                children: [
+          body: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF14233D),
+                  Color(0xFF5855B0),
+                  Color(0xFF191C32),
+                ],
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: SafeArea(
+                child: ListView(
+                  padding: listPad,
+                  children: [
                   _AuthHero(state: state),
                   const SizedBox(height: 28),
                   if (state.view == AuthView.signUp)
@@ -89,7 +101,7 @@ class _AuthPageState extends State<AuthPage> {
                         child: Text(
                           'Бүртгэл байхгүй юу? Бүртгүүлэх',
                           style: TextStyle(
-                            color: AuthTheme.primary.withValues(alpha: 0.95),
+                            color: const Color(0xFFE8DEF8),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -101,6 +113,7 @@ class _AuthPageState extends State<AuthPage> {
                     _AuthErrorBanner(message: state.errorMessage),
                   ],
                 ],
+                ),
               ),
             ),
           ),
@@ -139,7 +152,7 @@ class _AuthHero extends StatelessWidget {
           headline,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: AuthTheme.onSurface,
+            color: Colors.white.withValues(alpha: 0.94),
             fontSize: state.view == AuthView.signUp ? 20 : 20,
             height: 1.05,
             fontWeight: FontWeight.w800,
@@ -201,10 +214,10 @@ class _AuthErrorBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: AuthTheme.statusSurface,
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: AuthTheme.outlineVariant.withValues(alpha: 0.35),
+            color: Colors.white.withValues(alpha: 0.22),
           ),
         ),
         child: Row(
@@ -224,7 +237,7 @@ class _AuthErrorBanner extends StatelessWidget {
                 message,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: AuthTheme.onErrorContainer,
+                  color: Color(0xFFFFDAD6),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   height: 1.25,

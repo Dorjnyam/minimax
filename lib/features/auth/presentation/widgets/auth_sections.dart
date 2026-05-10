@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../shared/constants/baigalaa_constants.dart';
+import '../../auth_user_messages.dart';
 import '../../bloc/auth_cubit.dart';
-import '../auth_theme.dart';
 import 'auth_fields.dart';
 
 class SignUpSection extends StatefulWidget {
@@ -68,9 +69,14 @@ class _SignUpSectionState extends State<SignUpSection> {
                     label: 'И-МЭЙЛ',
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    autofillHints: const [],
+                    autofillHints: const [AutofillHints.email],
                     enableSuggestions: false,
                     autocorrect: false,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                    ],
+                    smartDashesType: SmartDashesType.disabled,
+                    smartQuotesType: SmartQuotesType.disabled,
                     validator: _emailValidator,
                     darkNeon: true,
                   ),
@@ -111,7 +117,7 @@ class _SignUpSectionState extends State<SignUpSection> {
             child: Text(
               'Бүртгэлтэй юу? Нэвтрэх',
               style: TextStyle(
-                color: AuthTheme.primary.withValues(alpha: 0.95),
+                color: const Color(0xFFE8DEF8),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -189,9 +195,14 @@ class _LoginSectionState extends State<LoginSection> {
                 label: 'И-МЭЙЛ',
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                autofillHints: const [],
+                autofillHints: const [AutofillHints.email],
                 enableSuggestions: false,
                 autocorrect: false,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                ],
+                smartDashesType: SmartDashesType.disabled,
+                smartQuotesType: SmartQuotesType.disabled,
                 validator: _emailValidator,
                 darkNeon: true,
               ),
@@ -201,6 +212,7 @@ class _LoginSectionState extends State<LoginSection> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.oneTimeCode],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) => _otpValidator(value, _requireOtp),
                 darkNeon: true,
               ),
@@ -227,18 +239,43 @@ class _LoginSectionState extends State<LoginSection> {
 
 String? _emailValidator(String? value) {
   final email = value?.trim() ?? '';
+  if (email.isEmpty) {
+    return AuthValidationMessages.emailRequired;
+  }
+  if (email.length > 254) {
+    return AuthValidationMessages.emailTooLong;
+  }
   final isValid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-  return isValid ? null : 'Enter a valid email address.';
+  return isValid ? null : AuthValidationMessages.emailInvalid;
 }
 
 String? _nameValidator(String? value) {
   final name = value?.trim() ?? '';
-  return name.length >= 2 ? null : 'Enter your full name.';
+  if (name.isEmpty) {
+    return AuthValidationMessages.nameRequired;
+  }
+  if (name.length < 2) {
+    return AuthValidationMessages.nameTooShort;
+  }
+  if (name.length > 120) {
+    return AuthValidationMessages.nameTooLong;
+  }
+  return null;
 }
 
 String? _phoneValidator(String? value) {
-  final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
-  return digits.length >= 6 ? null : 'Enter a valid phone number.';
+  final raw = (value ?? '').trim();
+  final digits = raw.replaceAll(RegExp(r'\D'), '');
+  if (raw.isEmpty) {
+    return AuthValidationMessages.phoneRequired;
+  }
+  if (digits.length < 6) {
+    return AuthValidationMessages.phoneInvalid;
+  }
+  if (digits.length > 15) {
+    return AuthValidationMessages.phoneTooLong;
+  }
+  return null;
 }
 
 String? _otpValidator(String? value, bool isRequired) {
@@ -246,5 +283,11 @@ String? _otpValidator(String? value, bool isRequired) {
     return null;
   }
   final otp = value?.trim() ?? '';
-  return otp.length >= 4 ? null : 'Enter the OTP from your email.';
+  if (otp.isEmpty) {
+    return AuthValidationMessages.otpRequired;
+  }
+  if (otp.length < 4) {
+    return AuthValidationMessages.otpTooShort;
+  }
+  return null;
 }

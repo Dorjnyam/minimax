@@ -117,6 +117,16 @@ class HackathonApiRepository {
     return _get(baseUrl, '/api/v1/groups/', token: token);
   }
 
+  Future<ApiCallResult> joinGroup({
+    required String baseUrl,
+    required String token,
+    required String inviteCode,
+  }) {
+    return _post(baseUrl, '/api/v1/groups/join', {
+      'invite_code': inviteCode,
+    }, token: token);
+  }
+
   Future<ApiCallResult> updateLocation({
     required String baseUrl,
     required String token,

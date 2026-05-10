@@ -4,8 +4,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../../shared/services/assistant_follow_up_launcher.dart';
 import '../../../shared/services/maps_launcher_service.dart';
-import '../../../shared/services/user_location_service.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/auth_storage.dart';
 import '../../auth/data/session_refresh_service.dart';
@@ -14,6 +14,7 @@ import '../../chat/data/chat_repository.dart';
 import '../../chat/data/chat_voice_socket_service.dart';
 import '../../chat/domain/chat_models.dart';
 import '../data/assistant_repository.dart';
+import '../domain/assistant_follow_up_action.dart';
 import '../domain/maps_command.dart';
 import '../services/assistant_chat_service.dart';
 import '../services/assistant_audio_recorder.dart';
@@ -21,17 +22,27 @@ import '../services/assistant_audio_recorder.dart';
 part 'assistant_state.dart';
 
 enum AssistantSuggestion {
-  lights,
-  airConditioner,
+  /// Maps: nearby POIs (`near me`).
+  nearbyPlaces,
+  /// Maps: current location.
   myLocation,
+  /// Maps: route to a landmark.
   directions,
-  coffeeNearMe,
+  /// Chat: group member locations (backend/agent).
+  groupLocations,
+  /// Chat: phone / call assistance.
+  callSomeone,
+  /// Chat: email compose assistance.
+  sendMail,
+  /// Chat: emergency / SOS guidance.
+  sos,
 }
 
 class AssistantCubit extends Cubit<AssistantState> {
   AssistantCubit({
     required AssistantRepository repository,
     required MapsLauncherService mapsLauncher,
+    AssistantFollowUpLauncher? followUpLauncher,
     MapsCommandParser parser = const MapsCommandParser(),
     AssistantAudioRecorder? audioRecorder,
     AssistantAudioRecorder Function()? audioRecorderFactory,
@@ -40,10 +51,11 @@ class AssistantCubit extends Cubit<AssistantState> {
     ChatRepository? chatRepository,
     ChatVoiceSocketService? chatVoiceSocket,
     ChatAudioPlaybackService? chatAudioPlayback,
-    UserLocationService? userLocationService,
     AssistantChatService? chatService,
   }) : _repository = repository,
        _mapsLauncher = mapsLauncher,
+       _followUpLauncher = followUpLauncher ??
+           AssistantFollowUpLauncher(mapsLauncher: mapsLauncher),
        _parser = parser,
        _audioRecorder = audioRecorder,
        _audioRecorderFactory =
@@ -60,13 +72,12 @@ class AssistantCubit extends Cubit<AssistantState> {
              chatRepository: chatRepository ?? const ChatRepository(),
              voiceSocket: chatVoiceSocket ?? const ChatVoiceSocketService(),
              audioPlayback: chatAudioPlayback ?? ChatAudioPlaybackService(),
-             locationService:
-                 userLocationService ?? UserLocationService(),
            ),
        super(const AssistantState());
 
   final AssistantRepository _repository;
   final MapsLauncherService _mapsLauncher;
+  final AssistantFollowUpLauncher _followUpLauncher;
   final MapsCommandParser _parser;
   AssistantAudioRecorder? _audioRecorder;
   final AssistantAudioRecorder Function() _audioRecorderFactory;
@@ -132,6 +143,36 @@ class AssistantCubit extends Cubit<AssistantState> {
     return _handleRecognizedText(text);
   }
 
+  /// Mic / orb: start recording, or stop and send (same pipeline as silence timeout).
+  Future<void> toggleListening() async {
+    if (_responding) return;
+    if (state.isListening) {
+      _listenTimeout?.cancel();
+      await _handleRecognizedText(state.transcript);
+      return;
+    }
+    await listen();
+  }
+
+  /// X: while recording, stop and send; while idle, clear transcript/response noise.
+  Future<void> cancelOrDismiss() async {
+    if (_responding) return;
+    if (state.isListening) {
+      _listenTimeout?.cancel();
+      await _handleRecognizedText(state.transcript);
+      return;
+    }
+    emit(
+      state.copyWith(
+        status: AssistantStatus.idle,
+        transcript: '',
+        response: const AssistantState().response,
+        recordingPath: '',
+        clearError: true,
+      ),
+    );
+  }
+
   Future<void> loadMessages() async {
     try {
       final result = await _chatService.loadMessages(state.conversationId);
@@ -149,12 +190,18 @@ class AssistantCubit extends Cubit<AssistantState> {
 
   Future<void> runSuggestion(AssistantSuggestion suggestion) {
     final text = switch (suggestion) {
-      AssistantSuggestion.lights => 'Turn off the light',
-      AssistantSuggestion.airConditioner =>
-        'Turn on the air conditioner in the living room',
+      // English phrases where [MapsCommandParser] matches; chip labels are Mongolian in UI.
+      AssistantSuggestion.nearbyPlaces => 'search restaurants near me',
       AssistantSuggestion.myLocation => 'show my location',
       AssistantSuggestion.directions => 'directions to Sukhbaatar Square',
-      AssistantSuggestion.coffeeNearMe => 'search coffee near me',
+      AssistantSuggestion.groupLocations =>
+        'Бүлгийн гишүүдийн байршлыг харуулж, газрын зураг дээр харуулна уу.',
+      AssistantSuggestion.callSomeone =>
+        'Утасдахад туслаарай: хэн рүү залгах вэ, ойрын контактууд.',
+      AssistantSuggestion.sendMail =>
+        'И-мэйл илгээхэд туслаарай: хүлээн авагч, гарчиг, агуулга.',
+      AssistantSuggestion.sos =>
+        'Яаралтай тусламж хэрэгтэй байна: эхлээд ойрын эмнэлэг, цагдаа, гал унтраагчийн утас хэлнэ үү.',
     };
     return _handleRecognizedText(text);
   }
@@ -199,8 +246,18 @@ class AssistantCubit extends Cubit<AssistantState> {
       await _launchMapCommand(command);
     } else if (shouldSendAudio) {
       await _respondWithChat(text, recordingPath);
-    } else {
+    } else if (text.isNotEmpty) {
       await _respondWithMock(text);
+    } else {
+      emit(
+        state.copyWith(
+          status: AssistantStatus.idle,
+          transcript: '',
+          response: const AssistantState().response,
+          recordingPath: '',
+          clearError: true,
+        ),
+      );
     }
     _responding = false;
   }
@@ -272,6 +329,53 @@ class AssistantCubit extends Cubit<AssistantState> {
     }
   }
 
+  /// After TTS/audio: Maps, tel/mail/https from [ChatAudioResponse.followUps].
+  Future<String?> _runFollowUpsAfterAudio(ChatAudioResponse reply) async {
+    if (reply.followUps.isNotEmpty) {
+      for (final step in reply.followUps) {
+        final msg = step.confirmation;
+        if (msg != null && msg.isNotEmpty) {
+          emit(
+            state.copyWith(
+              status: step is AssistantFollowUpMaps
+                  ? AssistantStatus.mapLaunching
+                  : AssistantStatus.responding,
+              response: msg,
+              lastCommand: step is AssistantFollowUpMaps
+                  ? step.command
+                  : state.lastCommand,
+              clearError: true,
+            ),
+          );
+        }
+        try {
+          await _followUpLauncher.runAll([step]);
+        } catch (error) {
+          return 'Could not open link or app: $error';
+        }
+      }
+      return null;
+    }
+
+    final mapCmd = reply.mapsCommand;
+    if (mapCmd != null) {
+      emit(
+        state.copyWith(
+          status: AssistantStatus.mapLaunching,
+          response: mapCmd.confirmation,
+          lastCommand: mapCmd,
+          clearError: true,
+        ),
+      );
+      try {
+        await _mapsLauncher.launch(mapCmd);
+      } catch (error) {
+        return 'Could not open Google Maps: $error';
+      }
+    }
+    return null;
+  }
+
   Future<void> _respondWithMock(String text) async {
     emit(state.copyWith(status: AssistantStatus.responding));
     final reply = await _repository.replyTo(text);
@@ -315,23 +419,7 @@ class AssistantCubit extends Cubit<AssistantState> {
         }
       }
 
-      String? mapsErr;
-      final mapCmd = reply.mapsCommand;
-      if (mapCmd != null) {
-        emit(
-          state.copyWith(
-            status: AssistantStatus.mapLaunching,
-            response: mapCmd.confirmation,
-            lastCommand: mapCmd,
-            clearError: true,
-          ),
-        );
-        try {
-          await _mapsLauncher.launch(mapCmd);
-        } catch (error) {
-          mapsErr = 'Could not open Google Maps: $error';
-        }
-      }
+      final followUpErr = await _runFollowUpsAfterAudio(reply);
 
       final assistantText = reply.text.isEmpty
           ? 'Voice response received.'
@@ -350,8 +438,8 @@ class AssistantCubit extends Cubit<AssistantState> {
               ? [...state.messages, assistantMessage]
               : freshMessages,
           replyAudioPath: localAudioPath,
-          errorMessage: mapsErr ?? state.errorMessage,
-          clearError: mapsErr == null && localAudioPath.isNotEmpty,
+          errorMessage: followUpErr ?? state.errorMessage,
+          clearError: followUpErr == null && localAudioPath.isNotEmpty,
         ),
       );
     } catch (error) {
@@ -408,23 +496,7 @@ class AssistantCubit extends Cubit<AssistantState> {
         }
       }
 
-      String? mapsErr;
-      final mapCmd = reply.mapsCommand;
-      if (mapCmd != null) {
-        emit(
-          state.copyWith(
-            status: AssistantStatus.mapLaunching,
-            response: mapCmd.confirmation,
-            lastCommand: mapCmd,
-            clearError: true,
-          ),
-        );
-        try {
-          await _mapsLauncher.launch(mapCmd);
-        } catch (error) {
-          mapsErr = 'Could not open Google Maps: $error';
-        }
-      }
+      final followUpErr = await _runFollowUpsAfterAudio(reply);
 
       final assistantText =
           reply.text.isEmpty ? 'Received.' : reply.text;
@@ -442,8 +514,8 @@ class AssistantCubit extends Cubit<AssistantState> {
               ? [...state.messages, assistantMessage]
               : freshMessages,
           replyAudioPath: localAudioPath,
-          errorMessage: mapsErr ?? state.errorMessage,
-          clearError: mapsErr == null && localAudioPath.isNotEmpty,
+          errorMessage: followUpErr ?? state.errorMessage,
+          clearError: followUpErr == null && localAudioPath.isNotEmpty,
         ),
       );
     } catch (error) {

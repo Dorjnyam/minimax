@@ -12,12 +12,28 @@ class MapsLauncherService {
 
   Future<void> launch(MapsCommand command) async {
     for (final uri in _urisFor(command)) {
-      final didLaunch = await _launch(uri, LaunchMode.externalApplication);
-      if (didLaunch) {
+      if (await _launchBestEffort(uri)) {
         return;
       }
     }
     throw StateError('Could not open Google Maps.');
+  }
+
+  /// Same strategy as [AssistantFollowUpLauncher] for tel/sms — many OEMs reject one mode.
+  Future<bool> _launchBestEffort(Uri uri) async {
+    const modes = <LaunchMode>[
+      LaunchMode.externalApplication,
+      LaunchMode.platformDefault,
+      LaunchMode.externalNonBrowserApplication,
+    ];
+    for (final mode in modes) {
+      try {
+        if (await _launch(uri, mode)) {
+          return true;
+        }
+      } catch (_) {}
+    }
+    return false;
   }
 
   static List<Uri> _urisFor(MapsCommand command) {
@@ -26,25 +42,66 @@ class MapsLauncherService {
         _geoSearchUri('current location'),
         _mapsSearchUri('current location'),
       ],
-      MapsCommandType.search => [
-        _geoSearchUri(command.query),
-        _mapsSearchUri(command.query),
-      ],
+      MapsCommandType.search => _searchUris(command.query),
       MapsCommandType.directions => _routeUris(command),
     };
   }
 
+  /// Prefer direct [geo:lat,lng] when the backend sends a coordinate pair (opens Maps reliably).
+  static List<Uri> _searchUris(String query) {
+    final coords = _parseCoordinatePair(query);
+    if (coords != null) {
+      final lat = coords.lat;
+      final lng = coords.lng;
+      return [
+        Uri.parse('geo:$lat,$lng'),
+        _geoSearchUri(query),
+        _mapsSearchUri(query),
+      ];
+    }
+    return [
+      _geoSearchUri(query),
+      _mapsSearchUri(query),
+    ];
+  }
+
+  /// `"47.9189,106.9176"` from agent / socket — not free text labels.
+  static ({double lat, double lng})? _parseCoordinatePair(String query) {
+    final t = query.trim();
+    final comma = t.indexOf(',');
+    if (comma <= 0 || comma >= t.length - 1) {
+      return null;
+    }
+    final lat = double.tryParse(t.substring(0, comma).trim());
+    final lng = double.tryParse(t.substring(comma + 1).trim());
+    if (lat == null || lng == null) {
+      return null;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return null;
+    }
+    return (lat: lat, lng: lng);
+  }
+
   static List<Uri> _routeUris(MapsCommand command) {
     final webUri = _mapsDirectionsUri(command);
+    final coord = _parseCoordinatePair(command.query);
     final canUseAndroidNavigation =
         command.routeAction == MapsRouteAction.navigate &&
         command.travelMode != MapsTravelMode.transit &&
         command.waypoints.isEmpty;
 
-    if (!canUseAndroidNavigation) {
-      return [webUri];
+    final out = <Uri>[];
+    if (coord != null) {
+      out.add(Uri.parse('geo:${coord.lat},${coord.lng}'));
     }
-    return [_googleNavigationUri(command), webUri];
+    if (!canUseAndroidNavigation) {
+      out.add(webUri);
+      return out;
+    }
+    out.add(_googleNavigationUri(command));
+    out.add(webUri);
+    return out;
   }
 
   static Uri _geoSearchUri(String query) {

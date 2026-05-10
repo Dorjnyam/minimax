@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/constants/baigalaa_constants.dart';
+import '../auth_user_messages.dart';
 import '../data/auth_repository.dart';
 import '../data/auth_storage.dart';
 import '../domain/auth_models.dart';
@@ -188,7 +189,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           status: AuthStatus.failure,
-          errorMessage: error.toString(),
+          errorMessage: AuthExceptionHandler.userMessage(error),
         ),
       );
     }
