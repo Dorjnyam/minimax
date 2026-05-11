@@ -59,6 +59,11 @@ class _BaigalaaShellState extends State<BaigalaaShell> {
     super.dispose();
   }
 
+  /// Stable reference so [ShellNavigationScope] does not notify every rebuild
+  /// (e.g. [WithForegroundTask] during voice / wake) when only the closure
+  /// identity would change.
+  void _goToPage(int index) => _pageController.jumpToPage(index);
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -91,7 +96,7 @@ class _BaigalaaShellState extends State<BaigalaaShell> {
           _scheduleReminderBootstrap(context);
           return WithForegroundTask(
             child: ShellNavigationScope(
-              goToPage: (i) => _pageController.jumpToPage(i),
+              goToPage: _goToPage,
               child: PageView(
                 controller: _pageController,
                 children: const [

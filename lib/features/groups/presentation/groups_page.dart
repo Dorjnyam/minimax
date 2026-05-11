@@ -20,84 +20,45 @@ class GroupsPage extends StatefulWidget {
 class _GroupsPageState extends State<GroupsPage> {
   Future<List<GroupSummary>>? _future;
 
+  static const Duration _loadTimeout = Duration(seconds: 45);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
   }
 
+  Future<List<GroupSummary>> _loadGroups() {
+    return context.read<GroupsRepository>().listGroups().timeout(
+          _loadTimeout,
+          onTimeout: () => throw TimeoutException(
+            'Бүлгийн жагсаалт ачаалахад хэт удаан байна.',
+          ),
+        );
+  }
+
   void _reload() {
     setState(() {
-      _future = context.read<GroupsRepository>().listGroups();
+      _future = _loadGroups();
     });
   }
 
   Future<void> _pullRefresh() async {
-    final repo = context.read<GroupsRepository>();
-    final f = repo.listGroups();
+    final f = _loadGroups();
     setState(() => _future = f);
     await f;
   }
 
   Future<void> _showJoinDialog() async {
-    final codeController = TextEditingController();
-    final ok = await showDialog<bool>(
+    final code = await showDialog<String?>(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A2438),
-          title: const Text(
-            'Бүлэгт нэгдэх',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-          ),
-          content: TextField(
-            controller: codeController,
-            autofocus: true,
-            style: const TextStyle(color: Colors.white),
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              labelText: 'Урилгын код',
-              labelStyle: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.35),
-                ),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(10)),
-                borderSide: BorderSide(color: Color(0xFF007C89)),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(
-                'Болих',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
-              ),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF007C89),
-              ),
-              child: const Text('Нэгдэх'),
-            ),
-          ],
-        );
-      },
+      builder: (ctx) => const _JoinGroupDialog(),
     );
-    final code = codeController.text.trim();
-    codeController.dispose();
-    if (ok != true || !mounted) return;
-    if (code.isEmpty) return;
+    final trimmed = code?.trim() ?? '';
+    if (!mounted || trimmed.isEmpty) return;
 
     try {
-      await context.read<GroupsRepository>().joinGroup(code);
+      await context.read<GroupsRepository>().joinGroup(trimmed);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -247,6 +208,80 @@ class _GroupsPageState extends State<GroupsPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Owns [TextEditingController] so it is disposed after the route is removed (no post-pop race).
+class _JoinGroupDialog extends StatefulWidget {
+  const _JoinGroupDialog();
+
+  @override
+  State<_JoinGroupDialog> createState() => _JoinGroupDialogState();
+}
+
+class _JoinGroupDialogState extends State<_JoinGroupDialog> {
+  late final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1A2438),
+      title: const Text(
+        'Бүлэгт нэгдэх',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+      ),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        style: const TextStyle(color: Colors.white),
+        textCapitalization: TextCapitalization.characters,
+        decoration: InputDecoration(
+          labelText: 'Урилгын код',
+          labelStyle: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(
+              color: Colors.white.withValues(alpha: 0.35),
+            ),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderSide: BorderSide(color: Color(0xFF007C89)),
+          ),
+        ),
+        onSubmitted: (_) {
+          final t = _controller.text.trim();
+          if (t.isNotEmpty) Navigator.of(context).pop(t);
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop<String?>(null),
+          child: Text(
+            'Болих',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+          ),
+        ),
+        FilledButton(
+          onPressed: () {
+            final t = _controller.text.trim();
+            Navigator.of(context).pop<String?>(t.isEmpty ? null : t);
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF007C89),
+          ),
+          child: const Text('Нэгдэх'),
+        ),
+      ],
     );
   }
 }

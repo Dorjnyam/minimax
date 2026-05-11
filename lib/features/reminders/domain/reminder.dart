@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Agent reminder row from GET `/api/v1/agents/reminders`.
+/// Agent reminder row from GET `/api/v1/agents/reminders` (no trailing slash on this API).
 class Reminder extends Equatable {
   const Reminder({
     required this.id,
@@ -45,6 +45,20 @@ class Reminder extends Equatable {
     return DateTime.tryParse(s);
   }
 
+  static bool _truthy(Object? v) {
+    if (v == true) return true;
+    if (v == false) return false;
+    if (v is num) return v != 0;
+    final s = v?.toString().trim().toLowerCase();
+    return s == 'true' || s == '1' || s == 'yes';
+  }
+
+  /// Open tab: active, incomplete reminders.
+  bool get matchesOpenTab => status == 'open' && !completed;
+
+  /// Closed tab: completed or no longer open.
+  bool get matchesClosedTab => completed || status != 'open';
+
   factory Reminder.fromJson(Map<String, Object?> json) {
     return Reminder(
       id: json['id']?.toString() ?? '',
@@ -57,7 +71,7 @@ class Reminder extends Equatable {
       nextRunAt: _parseDt(json['next_run_at']),
       lastRunAt: _parseDt(json['last_run_at']),
       status: json['status']?.toString() ?? 'open',
-      completed: json['completed'] == true,
+      completed: _truthy(json['completed']),
       lastResult: json['last_result']?.toString() ?? '',
       lastError: json['last_error']?.toString() ?? '',
       createdAt: _parseDt(json['created_at']),

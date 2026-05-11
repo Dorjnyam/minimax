@@ -8,9 +8,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/google_integration_models.dart';
 import '../../auth/gate/auth_gate_cubit.dart';
+import '../../../app/shell_navigation_scope.dart';
 import '../../../shared/constants/baigalaa_constants.dart';
 import '../../../shared/theme/baigalaa_assistant_shell.dart';
 import '../../groups/presentation/groups_page.dart';
@@ -276,10 +278,11 @@ class _BaigalaaProfilePageState extends State<BaigalaaProfilePage> {
         child: Material(
           color: Colors.transparent,
           child: SafeArea(
-            child: BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, auth) {
-                final user = auth.user;
+            child: BlocSelector<AuthCubit, AuthState, AuthUser>(
+              selector: (auth) => auth.user,
+              builder: (context, user) {
                 return GestureDetector(
+                  behavior: HitTestBehavior.translucent,
                   onLongPress: () => unawaited(_openFloatingAssistantOverlay()),
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(22, 16, 22, 28),
@@ -309,22 +312,9 @@ class _BaigalaaProfilePageState extends State<BaigalaaProfilePage> {
                             icon: Icons.event_note_outlined,
                             label: 'Хуваарьт таск',
                             subtitle:
-                                'Төлөвлөлт, сануулга — зүүн тал руу шудрахад туслах нээгдэнэ.',
+                                'Сануулга, давталт — туслах шиг зураасан дэлгэц руу шилжинэ.',
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Туслах руу шудран «Маргаашийн хурал сануулаарай» гэж хэлээрэй.',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.95,
-                                      ),
-                                    ),
-                                  ),
-                                  backgroundColor: const Color(0xFF2D3A55),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                              ShellNavigationScope.of(context).goToPage(2);
                             },
                           ),
                         ],
@@ -339,7 +329,7 @@ class _BaigalaaProfilePageState extends State<BaigalaaProfilePage> {
                             subtitle:
                                 'Гэр бүлийн бүлэг, урилгаар нэгдэж, гишүүдийн байршлыг харах.',
                             onTap: () {
-                              Navigator.of(context).push<void>(
+                              Navigator.of(context, rootNavigator: true).push<void>(
                                 MaterialPageRoute<void>(
                                   builder: (_) => const GroupsPage(),
                                 ),

@@ -49,12 +49,14 @@ class RemindersCubit extends Cubit<RemindersState> {
       ),
     );
     try {
-      final list = await _repository.listReminders(status: status);
-      emit(state.copyWith(reminders: list, loading: false));
+      final all = await _repository.fetchReminders();
+      final filtered = _filterByTab(all, status);
+      final pausedIds = state.pausedIds;
+      emit(state.copyWith(reminders: filtered, loading: false));
       if (status == 'open') {
         await _notifications.rescheduleAll(
-          reminders: list,
-          pausedIds: state.pausedIds,
+          reminders: _filterByTab(all, 'open'),
+          pausedIds: pausedIds,
         );
       }
     } catch (e) {
@@ -69,6 +71,17 @@ class RemindersCubit extends Cubit<RemindersState> {
 
   Future<void> setFilter(String status) async {
     await load(filterStatus: status);
+  }
+
+  static List<Reminder> _filterByTab(List<Reminder> all, String tab) {
+    switch (tab) {
+      case 'open':
+        return all.where((r) => r.matchesOpenTab).toList();
+      case 'closed':
+        return all.where((r) => r.matchesClosedTab).toList();
+      default:
+        return List<Reminder>.from(all);
+    }
   }
 
   Future<void> toggleLocalPause(Reminder r) async {
@@ -183,12 +196,8 @@ class RemindersCubit extends Cubit<RemindersState> {
 
   Future<Reminder?> _fetchOne(String id) async {
     try {
-      await load(filterStatus: 'open');
-      for (final r in state.reminders) {
-        if (r.id == id) return r;
-      }
-      await load(filterStatus: 'closed');
-      for (final r in state.reminders) {
+      final all = await _repository.fetchReminders();
+      for (final r in all) {
         if (r.id == id) return r;
       }
     } catch (_) {}
